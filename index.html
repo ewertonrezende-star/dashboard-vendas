@@ -10,24 +10,19 @@
 :root{--g9:#14532d;--g7:#15803d;--g6:#16a34a;--g1:#dcfce7;--g0:#f0fdf4;--s9:#0f172a;--s5:#64748b;--s2:#e2e8f0;--s1:#f1f5f9;--w:#fff;--r:#dc2626;--a:#f59e0b;--b:#2563eb;--t:#0d9488;--sh:0 4px 6px -1px rgb(0 0 0/.08);--rad:12px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Inter,system-ui,sans-serif;background:linear-gradient(160deg,#f0fdf4,#f8fafc 45%,#f1f5f9);color:var(--s9);min-height:100vh}
-.header{background:linear-gradient(135deg,var(--g9),var(--g7) 60%,#15803d);color:#fff;padding:1.1rem 1.6rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 10px 15px -3px rgb(0 0 0/.1);position:sticky;top:0;z-index:50}
-.header-left{display:flex;align-items:center;gap:.85rem}
-.logo{width:46px;height:46px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
-.header h1{font-size:1.25rem;font-weight:700}.header p{font-size:.75rem;opacity:.85}
+.header{background:linear-gradient(135deg,#0B3D6B,#14532d 55%,#15803d);color:#fff;padding:.9rem 1.4rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 10px 15px -3px rgb(0 0 0/.12);position:sticky;top:0;z-index:50;gap:1rem;flex-wrap:wrap}
+.header-left{display:flex;align-items:center;gap:.9rem}
+.logo-img{width:52px;height:52px;border-radius:50%;background:#fff;object-fit:contain;padding:3px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.header h1{font-size:1.2rem;font-weight:700;line-height:1.2}.header p{font-size:.72rem;opacity:.88;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.year-filters{display:flex;gap:.35rem;background:rgba(255,255,255,.12);padding:.3rem;border-radius:999px}
+.year-btn{padding:.35rem .85rem;border-radius:999px;border:none;background:transparent;color:#fff;font-size:.78rem;font-weight:600;cursor:pointer;opacity:.75;transition:all .15s}
+.year-btn:hover{opacity:1;background:rgba(255,255,255,.15)}
+.year-btn.active{background:#fff;color:#14532d;opacity:1}
+.menu-btn{width:38px;height:38px;border-radius:10px;border:1.5px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.menu-btn:hover{background:rgba(255,255,255,.25)}
 .container{max-width:1400px;margin:0 auto;padding:1.25rem 1.5rem}
 .note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.65rem .9rem;font-size:.78rem;color:#1e40af;margin-bottom:1.1rem}
-.upload-box{background:#fff;border:2px dashed #86efac;border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.2rem;display:flex;flex-wrap:wrap;align-items:center;gap:1rem;box-shadow:var(--sh)}
-.upload-box.dragover{background:#f0fdf4;border-color:#16a34a}
-.upload-info{flex:1;min-width:220px}
-.upload-info h3{font-size:.95rem;font-weight:700;color:var(--g9);margin-bottom:.25rem}
-.upload-info p{font-size:.78rem;color:var(--s5);line-height:1.4}
-.upload-actions{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
-.btn{padding:.55rem 1.1rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:.4rem;transition:all .15s}
-.btn-primary{background:var(--g7);color:#fff}.btn-primary:hover{background:var(--g9)}
-.btn-secondary{background:#fff;color:var(--g9);border:1.5px solid var(--g6)}.btn-secondary:hover{background:var(--g0)}
-.btn-outline{background:#fff;color:#334155;border:1.5px solid var(--s2)}.btn-outline:hover{border-color:var(--g6);color:var(--g7)}
-.status{font-size:.78rem;padding:.35rem .7rem;border-radius:6px;font-weight:600}
-.status.ok{background:#dcfce7;color:#166534}.status.warn{background:#fef3c7;color:#92400e}.status.err{background:#fee2e2;color:#991b1b}
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.85rem;margin-bottom:1.2rem}
 .kpi-card{background:var(--w);border-radius:var(--rad);padding:1.1rem 1.2rem;box-shadow:var(--sh);border:1px solid var(--s2);position:relative;overflow:hidden}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
@@ -50,87 +45,118 @@ tr:hover td{background:#f8fafc}
 .filters{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
 .filter-btn{padding:.4rem .9rem;border-radius:999px;border:1.5px solid var(--s2);background:#fff;font-size:.78rem;font-weight:600;cursor:pointer;color:#334155}
 .filter-btn:hover,.filter-btn.active{background:var(--g7);color:#fff;border-color:var(--g7)}
-.hidden{display:none}
-.template-box{font-size:.75rem;background:#f8fafc;border:1px solid var(--s2);border-radius:8px;padding:.7rem .9rem;margin-top:.6rem;color:#475569}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:520px;box-shadow:0 20px 40px rgba(0,0,0,.2);overflow:hidden}
+.modal-header{background:linear-gradient(135deg,#0B3D6B,#14532d);color:#fff;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:1rem;font-weight:700}
+.modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:rgba(255,255,255,.35)}
+.modal-body{padding:1.25rem}
+.modal-body p{font-size:.82rem;color:var(--s5);line-height:1.5;margin-bottom:.9rem}
+.template-box{font-size:.75rem;background:#f8fafc;border:1px solid var(--s2);border-radius:8px;padding:.7rem .9rem;margin-bottom:1rem;color:#475569}
 .template-box code{background:#e2e8f0;padding:.1rem .35rem;border-radius:4px;font-size:.72rem}
+.upload-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem}
+.btn{padding:.55rem 1.1rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:.4rem;transition:all .15s}
+.btn-primary{background:var(--g7);color:#fff}.btn-primary:hover{background:var(--g9)}
+.btn-secondary{background:#fff;color:var(--g9);border:1.5px solid var(--g6)}.btn-secondary:hover{background:var(--g0)}
+.btn-outline{background:#fff;color:#334155;border:1.5px solid var(--s2)}.btn-outline:hover{border-color:var(--g6);color:var(--g7)}
+.status{font-size:.78rem;padding:.4rem .75rem;border-radius:6px;font-weight:600;display:none}
+.status.show{display:block}
+.status.ok{background:#dcfce7;color:#166534}.status.warn{background:#fef3c7;color:#92400e}.status.err{background:#fee2e2;color:#991b1b}
+.hidden{display:none}
 </style>
 </head>
 <body>
 <header class="header">
-<div class="header-left"><div class="logo">🌾</div><div><h1>Cooperativa Agrícola de Sintra</h1><p>Vendas Líquidas por Loja · Comparativo 2025 vs Ano Atual</p></div></div>
-<div style="font-size:.78rem;opacity:.9;text-align:right" id="headerMeta">Carregue os dados do ano atual<br><strong>6 lojas</strong></div>
-</header>
-<div class="container">
-
-<!-- UPLOAD -->
-<div class="upload-box" id="uploadBox">
-  <div class="upload-info">
-    <h3>📤 Carregar dados do ano atual</h3>
-    <p>Carregue um ficheiro CSV com as vendas líquidas por loja e por mês. Os dados de <strong>2025</strong> estão fixos e a comparação é automática.</p>
-    <div class="template-box">
-      <strong>Formato CSV (separador ; ou ,):</strong><br>
-      Cabeçalho: <code>Loja;Mês;Líquido</code><br>
-      Exemplo: <code>Sintra;1;77698.99</code> ou <code>Sintra;Janeiro;77698.99</code><br>
-      Mês pode ser número (1-12) ou nome (Janeiro, Fevereiro…). Valores em euros (ponto ou vírgula decimal).
+  <div class="header-left">
+    <img src="https://raw.githubusercontent.com/ewertonrezende-star/coopsintra/main/logo-coopsintra.png" alt="Cooperativa Agrícola de Sintra" class="logo-img">
+    <div>
+      <h1>Cooperativa Agrícola de Sintra</h1>
+      <p>Vendas Líquidas por Loja · Comparativo</p>
     </div>
   </div>
-  <div class="upload-actions">
-    <label class="btn btn-primary">
-      📁 Escolher ficheiro CSV
-      <input type="file" id="fileInput" accept=".csv,text/csv" class="hidden">
-    </label>
-    <button class="btn btn-secondary" id="btnTemplate">⬇️ Descarregar modelo CSV</button>
-    <button class="btn btn-outline" id="btnReset" title="Voltar aos dados de exemplo">↺ Dados exemplo</button>
+  <div class="header-right">
+    <div class="year-filters" id="yearFilters">
+      <button class="year-btn active" data-ano="2026">2025 vs 2026</button>
+    </div>
+    <button class="menu-btn" id="btnMenu" title="Gerir dados">⚙️</button>
   </div>
-  <div id="uploadStatus" class="status ok hidden"></div>
-</div>
+</header>
 
-<div class="note" id="nota">
-  <strong>Nota:</strong> Valores líquidos (€). Comparativo YTD = meses com dados no ano atual. Outubro e meses futuros sem dados aparecem a zero.
-</div>
+<div class="container">
+  <div class="note" id="nota">
+    <strong>Nota:</strong> Valores líquidos (€). Comparativo YTD = meses com dados no ano atual.
+  </div>
 
-<div class="kpi-grid" id="kpis"></div>
+  <div class="kpi-grid" id="kpis"></div>
 
-<div class="grid-2">
-  <div class="section"><div class="section-title">📊 Vendas YTD por Loja (2025 vs Ano Atual)</div><div class="chart-wrap"><canvas id="chartLojas"></canvas></div></div>
-  <div class="section"><div class="section-title">📅 Evolução Mensal Total (todas as lojas)</div><div class="chart-wrap"><canvas id="chartMes"></canvas></div></div>
-</div>
+  <div class="grid-2">
+    <div class="section"><div class="section-title">📊 Vendas YTD por Loja</div><div class="chart-wrap"><canvas id="chartLojas"></canvas></div></div>
+    <div class="section"><div class="section-title">📅 Evolução Mensal Total</div><div class="chart-wrap"><canvas id="chartMes"></canvas></div></div>
+  </div>
 
-<div class="section">
-  <div class="section-title">🏪 Comparativo por Loja (YTD)</div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Loja</th><th class="num">Líq. 2025</th><th class="num">Líq. Ano Atual</th><th class="num">Var. €</th><th class="num">Var. %</th><th class="num">Peso Ano Atual</th></tr></thead>
-    <tbody id="tabelaLojas"></tbody>
-  </table></div>
-</div>
+  <div class="section">
+    <div class="section-title">🏪 Comparativo por Loja (YTD)</div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Loja</th><th class="num">Líq. 2025</th><th class="num" id="thAnoAtual">Líq. 2026</th><th class="num">Var. €</th><th class="num">Var. %</th><th class="num">Peso</th></tr></thead>
+      <tbody id="tabelaLojas"></tbody>
+    </table></div>
+  </div>
 
-<div class="section">
-  <div class="section-title">📆 Comparativo Mensal Total</div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Mês</th><th class="num">Líq. 2025</th><th class="num">Líq. Ano Atual</th><th class="num">Var. €</th><th class="num">Var. %</th></tr></thead>
-    <tbody id="tabelaMes"></tbody>
-  </table></div>
-</div>
+  <div class="section">
+    <div class="section-title">📆 Comparativo Mensal Total</div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Mês</th><th class="num">Líq. 2025</th><th class="num" id="thAnoAtualMes">Líq. 2026</th><th class="num">Var. €</th><th class="num">Var. %</th></tr></thead>
+      <tbody id="tabelaMes"></tbody>
+    </table></div>
+  </div>
 
-<div class="section">
-  <div class="section-title">📈 Evolução Mensal por Loja (Ano Atual)</div>
-  <div class="filters" id="lojaFilters"></div>
-  <div class="chart-wrap" style="height:320px"><canvas id="chartLojaMes"></canvas></div>
-</div>
+  <div class="section">
+    <div class="section-title">📈 Evolução Mensal por Loja</div>
+    <div class="filters" id="lojaFilters"></div>
+    <div class="chart-wrap" style="height:320px"><canvas id="chartLojaMes"></canvas></div>
+  </div>
 
-<div class="section">
-  <div class="section-title">📋 Detalhe Mês × Loja</div>
-  <div class="filters" id="mesFilters"></div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Loja</th><th class="num">Líq. 2025</th><th class="num">Líq. Ano Atual</th><th class="num">Var. €</th><th class="num">Var. %</th></tr></thead>
-    <tbody id="tabelaDetalhe"></tbody>
-  </table></div>
+  <div class="section">
+    <div class="section-title">📋 Detalhe Mês × Loja</div>
+    <div class="filters" id="mesFilters"></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Loja</th><th class="num">Líq. 2025</th><th class="num" id="thAnoAtualDet">Líq. 2026</th><th class="num">Var. €</th><th class="num">Var. %</th></tr></thead>
+      <tbody id="tabelaDetalhe"></tbody>
+    </table></div>
+  </div>
 </div>
+<footer class="footer">Cooperativa Agrícola de Sintra · Vendas líquidas por loja · Dashboard</footer>
+
+<!-- Modal Gerir Dados -->
+<div class="overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚙️ Gerir dados</h3>
+      <button class="modal-close" id="btnCloseModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>Carregue um ficheiro CSV com as vendas líquidas por loja e mês. Os dados de <strong>2025</strong> estão fixos. A comparação é automática.</p>
+      <div class="template-box">
+        <strong>Formato CSV</strong> (separador <code>;</code> ou <code>,</code>)<br>
+        Cabeçalho: <code>Loja;Mês;Líquido</code><br>
+        Ex.: <code>Sintra;1;77698.99</code> ou <code>Sintra;Janeiro;77698.99</code>
+      </div>
+      <div class="upload-actions">
+        <label class="btn btn-primary">
+          📁 Escolher CSV
+          <input type="file" id="fileInput" accept=".csv,text/csv" class="hidden">
+        </label>
+        <button class="btn btn-secondary" id="btnTemplate">⬇️ Modelo CSV</button>
+        <button class="btn btn-outline" id="btnReset">↺ Dados exemplo</button>
+      </div>
+      <div id="uploadStatus" class="status"></div>
+    </div>
+  </div>
 </div>
-<footer class="footer">Cooperativa Agrícola de Sintra · Vendas líquidas por loja · 2025 vs Ano Atual · Dashboard dinâmico</footer>
 
 <script>
-// ========== DADOS FIXOS 2025 ==========
 const LOJAS_FIXAS = ["Sintra","Colares","Albarraque","Arneiro","Mem Martins","Sabugo"];
 const MESES_NOME = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MESES_ABREV = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -145,7 +171,6 @@ const matriz_2025 = {
   "Sintra":     [41081.19,47782.56,48265.76,62051.38,75585.72,57918.71,50581.63,40031.84,50781.81,55867.34,42545.3,36901.17]
 };
 
-// Dados de exemplo 2026 (os que estavam no dashboard original)
 const matriz_2026_exemplo = {
   "Albarraque": [44270.57,43108.88,59651.91,57495.22,51305.72,44250.64,48217.96,41617.56,47940.98,15645.9,0,0],
   "Arneiro":    [27131.03,26820.16,39128.58,35738.62,32653.37,27013.49,28551.53,24134.04,24763.6,8168.64,0,0],
@@ -155,12 +180,10 @@ const matriz_2026_exemplo = {
   "Sintra":     [77698.99,102835.8,142136.69,118402.51,140007.34,105999.6,97411.7,83120.94,98761.48,25692.94,0,0]
 };
 
-// ========== ESTADO ==========
 let matrizAtual = JSON.parse(JSON.stringify(matriz_2026_exemplo));
 let anoAtualLabel = "2026";
 let charts = { lojas: null, mes: null, lojaMes: null };
 
-// ========== UTILITÁRIOS ==========
 const fmtEur = v => new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v||0);
 const fmtPct = v => (v>=0?'+':'') + (v||0).toFixed(1) + '%';
 
@@ -168,7 +191,6 @@ function parseNumber(str) {
   if (typeof str === 'number') return str;
   if (!str) return 0;
   str = String(str).trim().replace(/\s/g,'').replace(/€/g,'');
-  // vírgula decimal europeia
   if (str.includes(',') && !str.includes('.')) str = str.replace(',','.');
   else if (str.includes(',') && str.includes('.')) str = str.replace(/\./g,'').replace(',','.');
   return parseFloat(str) || 0;
@@ -178,50 +200,35 @@ function normalizeMes(val) {
   if (typeof val === 'number') return val;
   const s = String(val).trim().toLowerCase();
   const map = {
-    '1':1,'janeiro':1,'jan':1,
-    '2':2,'fevereiro':2,'fev':2,
-    '3':3,'março':3,'marco':3,'mar':3,
-    '4':4,'abril':4,'abr':4,
-    '5':5,'maio':5,'mai':5,
-    '6':6,'junho':6,'jun':6,
-    '7':7,'julho':7,'jul':7,
-    '8':8,'agosto':8,'ago':8,
-    '9':9,'setembro':9,'set':9,
-    '10':10,'outubro':10,'out':10,
-    '11':11,'novembro':11,'nov':11,
-    '12':12,'dezembro':12,'dez':12
+    '1':1,'janeiro':1,'jan':1,'2':2,'fevereiro':2,'fev':2,
+    '3':3,'março':3,'marco':3,'mar':3,'4':4,'abril':4,'abr':4,
+    '5':5,'maio':5,'mai':5,'6':6,'junho':6,'jun':6,
+    '7':7,'julho':7,'jul':7,'8':8,'agosto':8,'ago':8,
+    '9':9,'setembro':9,'set':9,'10':10,'outubro':10,'out':10,
+    '11':11,'novembro':11,'nov':11,'12':12,'dezembro':12,'dez':12
   };
   return map[s] || parseInt(s,10) || 0;
 }
 
 function normalizeLoja(nome) {
   const n = String(nome).trim();
-  const found = LOJAS_FIXAS.find(l => l.toLowerCase() === n.toLowerCase());
-  return found || n;
+  return LOJAS_FIXAS.find(l => l.toLowerCase() === n.toLowerCase()) || n;
 }
 
-// ========== CSV PARSER ==========
 function parseCSV(text) {
   const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
   if (lines.length < 2) throw new Error('Ficheiro vazio ou sem dados.');
-
-  // Detetar separador
   const first = lines[0];
   const sep = (first.split(';').length > first.split(',').length) ? ';' : ',';
-
   const headers = first.split(sep).map(h => h.trim().toLowerCase().replace(/"/g,''));
   const idxLoja = headers.findIndex(h => h.includes('loja'));
-  const idxMes  = headers.findIndex(h => h.includes('mês') || h.includes('mes') || h === 'mês nº' || h === 'mes nº');
+  const idxMes  = headers.findIndex(h => h.includes('mês') || h.includes('mes'));
   const idxVal  = headers.findIndex(h => h.includes('líquido') || h.includes('liquido') || h.includes('valor') || h.includes('vendas') || h === 'líq.' || h === 'liq.');
-
   if (idxLoja < 0 || idxMes < 0 || idxVal < 0) {
-    throw new Error('Cabeçalho inválido. É necessário: Loja ; Mês ; Líquido (ou Valor/Vendas)');
+    throw new Error('Cabeçalho inválido. Necessário: Loja ; Mês ; Líquido');
   }
-
-  // Inicializar matriz a zeros
   const matriz = {};
   LOJAS_FIXAS.forEach(l => { matriz[l] = Array(12).fill(0); });
-
   let linhasValidas = 0;
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g,''));
@@ -234,35 +241,19 @@ function parseCSV(text) {
     matriz[loja][mes-1] = val;
     linhasValidas++;
   }
-  if (linhasValidas === 0) throw new Error('Nenhuma linha válida encontrada. Verifique o formato.');
+  if (linhasValidas === 0) throw new Error('Nenhuma linha válida encontrada.');
   return matriz;
 }
 
-// ========== CÁLCULOS ==========
 function calcularTudo(matrizAno) {
-  const lojas = LOJAS_FIXAS.map(loja => {
-    // YTD = soma dos meses em que o ano atual tem dados (ou todos se quiser, mas aqui usamos os 12 e zeros)
-    // Melhor: YTD = soma dos meses 1..último mês com dados em qualquer loja
-    let ytd25 = 0, ytdAtual = 0;
-    for (let m = 0; m < 12; m++) {
-      ytd25 += matriz_2025[loja][m] || 0;
-      ytdAtual += matrizAno[loja]?.[m] || 0;
-    }
-    // Na verdade para YTD justo, truncar ao último mês com dados
-    // Vamos calcular o último mês com dados globalmente
-    return { loja, ytd25, ytdAtual };
-  });
-
-  // Encontrar último mês com dados no ano atual
   let ultimoMes = 0;
   LOJAS_FIXAS.forEach(l => {
     for (let m = 11; m >= 0; m--) {
       if ((matrizAno[l]?.[m] || 0) > 0) { ultimoMes = Math.max(ultimoMes, m+1); break; }
     }
   });
-  if (ultimoMes === 0) ultimoMes = 10; // fallback
+  if (ultimoMes === 0) ultimoMes = 10;
 
-  // Recalcular YTD só até ultimoMes
   const lojasYTD = LOJAS_FIXAS.map(loja => {
     let ytd25 = 0, ytdAtual = 0;
     for (let m = 0; m < ultimoMes; m++) {
@@ -280,7 +271,6 @@ function calcularTudo(matrizAno) {
   const var_pct = ytd_2025 ? (var_eur / ytd_2025 * 100) : 0;
   const ano_2025_full = LOJAS_FIXAS.reduce((s,l) => s + matriz_2025[l].reduce((a,b)=>a+b,0), 0);
 
-  // Mensal total
   const mensal = MESES_NOME.map((nome, i) => {
     const l25 = LOJAS_FIXAS.reduce((s,l) => s + (matriz_2025[l][i]||0), 0);
     const lAt = LOJAS_FIXAS.reduce((s,l) => s + (matrizAno[l]?.[i]||0), 0);
@@ -289,57 +279,51 @@ function calcularTudo(matrizAno) {
     return { 'Mês Nº': i+1, 'Mês': nome, 'Líq. 2025': l25, 'Líq. 2026': lAt, 'Var. €': v, 'Var. %': p };
   });
 
-  // Detalhe
   const detalhe = [];
   LOJAS_FIXAS.forEach(loja => {
-    let acum25 = 0, acumAt = 0;
     for (let i = 0; i < 12; i++) {
       const v25 = matriz_2025[loja][i] || 0;
       const vAt = matrizAno[loja]?.[i] || 0;
-      acum25 += v25; acumAt += vAt;
       const v = vAt - v25;
       const p = v25 ? (v/v25*100) : (vAt?100:0);
       detalhe.push({
         Loja: loja, 'Mês Nº': i+1, 'Mês': MESES_NOME[i],
-        'Líq. 2025': v25, 'Acum. 2025': acum25,
-        'Líq. 2026': vAt, 'Acum. 2026': acumAt,
-        'Var. €': v, 'Var. %': p
+        'Líq. 2025': v25, 'Líq. 2026': vAt, 'Var. €': v, 'Var. %': p
       });
     }
   });
 
   return {
-    lojas: lojasYTD,
-    mensal,
-    detalhe,
-    totais: { ytd_2025, ytd_2026: ytd_atual, var_eur, var_pct, ano_2025_full, ano_2026_parcial: ytd_atual, ultimoMes },
+    lojas: lojasYTD, mensal, detalhe,
+    totais: { ytd_2025, ytd_2026: ytd_atual, var_eur, var_pct, ano_2025_full, ultimoMes },
     matriz_2026: matrizAno
   };
 }
 
-// ========== RENDER ==========
 function render(DATA) {
   const T = DATA.totais;
   const lojas = DATA.lojas;
   const mensal = DATA.mensal;
   const detalhe = DATA.detalhe;
 
-  document.getElementById('headerMeta').innerHTML =
-    `YTD até ${MESES_NOME[T.ultimoMes-1] || 'Outubro'} ${anoAtualLabel}<br><strong>6 lojas</strong>`;
-
   document.getElementById('nota').innerHTML =
-    `<strong>Nota:</strong> Valores líquidos (€). Comparativo YTD = Janeiro a ${MESES_NOME[T.ultimoMes-1]} ${anoAtualLabel}. Meses sem dados aparecem a zero.`;
+    '<strong>Nota:</strong> Valores líquidos (€). Comparativo YTD = Janeiro a ' + MESES_NOME[T.ultimoMes-1] + ' ' + anoAtualLabel + '.';
 
-  // KPIs
+  document.getElementById('thAnoAtual').textContent = 'Líq. ' + anoAtualLabel;
+  document.getElementById('thAnoAtualMes').textContent = 'Líq. ' + anoAtualLabel;
+  document.getElementById('thAnoAtualDet').textContent = 'Líq. ' + anoAtualLabel;
+
+  document.getElementById('yearFilters').innerHTML =
+    '<button class="year-btn active" data-ano="' + anoAtualLabel + '">2025 vs ' + anoAtualLabel + '</button>';
+
   document.getElementById('kpis').innerHTML = [
-    {l:`YTD ${anoAtualLabel}`, v:fmtEur(T.ytd_2026), s:'Soma de todas as lojas', c:'green'},
+    {l:'YTD ' + anoAtualLabel, v:fmtEur(T.ytd_2026), s:'Soma de todas as lojas', c:'green'},
     {l:'YTD 2025 (mesmo período)', v:fmtEur(T.ytd_2025), s:'Mesmo período ano anterior', c:'blue'},
     {l:'Variação YTD', v:fmtEur(T.var_eur), s:fmtPct(T.var_pct)+' vs 2025', c:T.var_pct>=0?'teal':'red', d:fmtPct(T.var_pct), up:T.var_pct>=0},
     {l:'Ano 2025 completo', v:fmtEur(T.ano_2025_full), s:'Jan–Dez 2025', c:'amber'},
     {l:'Nº Lojas', v:'6', s:LOJAS_FIXAS.join(' · '), c:'green'},
-  ].map(k=>`<div class="kpi-card ${k.c}"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-sub">${k.s}</div>${k.d?`<div class="kpi-delta ${k.up?'up':'down'}">${k.d}</div>`:''}</div>`).join('');
+  ].map(k=>'<div class="kpi-card '+k.c+'"><div class="kpi-label">'+k.l+'</div><div class="kpi-value">'+k.v+'</div><div class="kpi-sub">'+k.s+'</div>'+(k.d?'<div class="kpi-delta '+(k.up?'up':'down')+'">'+k.d+'</div>':'')+'</div>').join('');
 
-  // Chart lojas
   if (charts.lojas) charts.lojas.destroy();
   charts.lojas = new Chart(document.getElementById('chartLojas'), {
     type:'bar',
@@ -356,7 +340,6 @@ function render(DATA) {
     }
   });
 
-  // Chart mensal
   if (charts.mes) charts.mes.destroy();
   charts.mes = new Chart(document.getElementById('chartMes'), {
     type:'line',
@@ -373,44 +356,20 @@ function render(DATA) {
     }
   });
 
-  // Tabela lojas
   const total26 = T.ytd_2026;
   document.getElementById('tabelaLojas').innerHTML = lojas.map(l=>{
     const peso = total26 ? l['Líq. 2026']/total26*100 : 0;
     const up = l['Var. %'] >= 0;
-    return `<tr>
-      <td><strong>${l.Loja}</strong></td>
-      <td class="num">${fmtEur(l['Líq. 2025'])}</td>
-      <td class="num pos">${fmtEur(l['Líq. 2026'])}</td>
-      <td class="num ${up?'pos':'neg'}">${fmtEur(l['Var. €'])}</td>
-      <td class="num ${up?'pos':'neg'}">${fmtPct(l['Var. %'])}</td>
-      <td class="num">${peso.toFixed(1)}%</td>
-    </tr>`;
-  }).join('') + `<tr style="font-weight:700;background:#f0fdf4">
-    <td>TOTAL</td>
-    <td class="num">${fmtEur(T.ytd_2025)}</td>
-    <td class="num pos">${fmtEur(T.ytd_2026)}</td>
-    <td class="num ${T.var_pct>=0?'pos':'neg'}">${fmtEur(T.var_eur)}</td>
-    <td class="num ${T.var_pct>=0?'pos':'neg'}">${fmtPct(T.var_pct)}</td>
-    <td class="num">100%</td>
-  </tr>`;
+    return '<tr><td><strong>'+l.Loja+'</strong></td><td class="num">'+fmtEur(l['Líq. 2025'])+'</td><td class="num pos">'+fmtEur(l['Líq. 2026'])+'</td><td class="num '+(up?'pos':'neg')+'">'+fmtEur(l['Var. €'])+'</td><td class="num '+(up?'pos':'neg')+'">'+fmtPct(l['Var. %'])+'</td><td class="num">'+peso.toFixed(1)+'%</td></tr>';
+  }).join('') + '<tr style="font-weight:700;background:#f0fdf4"><td>TOTAL</td><td class="num">'+fmtEur(T.ytd_2025)+'</td><td class="num pos">'+fmtEur(T.ytd_2026)+'</td><td class="num '+(T.var_pct>=0?'pos':'neg')+'">'+fmtEur(T.var_eur)+'</td><td class="num '+(T.var_pct>=0?'pos':'neg')+'">'+fmtPct(T.var_pct)+'</td><td class="num">100%</td></tr>';
 
-  // Tabela mensal
   document.getElementById('tabelaMes').innerHTML = mensal.map(m=>{
     const up = m['Var. %'] >= 0;
-    return `<tr>
-      <td><strong>${m['Mês']}</strong></td>
-      <td class="num">${fmtEur(m['Líq. 2025'])}</td>
-      <td class="num">${fmtEur(m['Líq. 2026'])}</td>
-      <td class="num ${up?'pos':'neg'}">${fmtEur(m['Var. €'])}</td>
-      <td class="num ${up?'pos':'neg'}">${fmtPct(m['Var. %'])}</td>
-    </tr>`;
+    return '<tr><td><strong>'+m['Mês']+'</strong></td><td class="num">'+fmtEur(m['Líq. 2025'])+'</td><td class="num">'+fmtEur(m['Líq. 2026'])+'</td><td class="num '+(up?'pos':'neg')+'">'+fmtEur(m['Var. €'])+'</td><td class="num '+(up?'pos':'neg')+'">'+fmtPct(m['Var. %'])+'</td></tr>';
   }).join('');
 
-  // Filtros loja + chart
-  const lojaNames = LOJAS_FIXAS;
-  document.getElementById('lojaFilters').innerHTML = ['TODAS',...lojaNames].map((l,i)=>
-    `<button class="filter-btn ${i===0?'active':''}" data-loja="${l}">${l}</button>`
+  document.getElementById('lojaFilters').innerHTML = ['TODAS',...LOJAS_FIXAS].map((l,i)=>
+    '<button class="filter-btn '+(i===0?'active':'')+'" data-loja="'+l+'">'+l+'</button>'
   ).join('');
   document.querySelectorAll('#lojaFilters .filter-btn').forEach(btn=>{
     btn.onclick=()=>{
@@ -421,9 +380,8 @@ function render(DATA) {
   });
   drawLojaMes('TODAS', DATA.matriz_2026);
 
-  // Filtros mês
   document.getElementById('mesFilters').innerHTML = mensal.map((m,i)=>
-    `<button class="filter-btn ${i===0?'active':''}" data-mes="${m['Mês Nº']}">${m['Mês'].slice(0,3)}</button>`
+    '<button class="filter-btn '+(i===0?'active':'')+'" data-mes="'+m['Mês Nº']+'">'+m['Mês'].slice(0,3)+'</button>'
   ).join('');
   document.querySelectorAll('#mesFilters .filter-btn').forEach(btn=>{
     btn.onclick=()=>{
@@ -462,25 +420,21 @@ function showMes(mesNum, detalhe) {
   const rows = detalhe.filter(d=>d['Mês Nº']===mesNum);
   document.getElementById('tabelaDetalhe').innerHTML = rows.map(r=>{
     const up = r['Var. %'] >= 0;
-    return `<tr>
-      <td><strong>${r.Loja}</strong></td>
-      <td class="num">${fmtEur(r['Líq. 2025'])}</td>
-      <td class="num">${fmtEur(r['Líq. 2026'])}</td>
-      <td class="num ${up?'pos':'neg'}">${fmtEur(r['Var. €'])}</td>
-      <td class="num ${up?'pos':'neg'}">${fmtPct(r['Var. %'])}</td>
-    </tr>`;
+    return '<tr><td><strong>'+r.Loja+'</strong></td><td class="num">'+fmtEur(r['Líq. 2025'])+'</td><td class="num">'+fmtEur(r['Líq. 2026'])+'</td><td class="num '+(up?'pos':'neg')+'">'+fmtEur(r['Var. €'])+'</td><td class="num '+(up?'pos':'neg')+'">'+fmtPct(r['Var. %'])+'</td></tr>';
   }).join('');
 }
 
-// ========== UPLOAD HANDLERS ==========
+const overlay = document.getElementById('modalOverlay');
+document.getElementById('btnMenu').onclick = () => overlay.classList.add('open');
+document.getElementById('btnCloseModal').onclick = () => overlay.classList.remove('open');
+overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove('open'); };
+
 const fileInput = document.getElementById('fileInput');
-const uploadBox = document.getElementById('uploadBox');
 const statusEl = document.getElementById('uploadStatus');
 
 function setStatus(msg, type) {
-  statusEl.className = 'status ' + type;
+  statusEl.className = 'status show ' + type;
   statusEl.textContent = msg;
-  statusEl.classList.remove('hidden');
 }
 
 fileInput.addEventListener('change', e => {
@@ -491,41 +445,23 @@ fileInput.addEventListener('change', e => {
     try {
       const matriz = parseCSV(ev.target.result);
       matrizAtual = matriz;
-      // tentar adivinhar o ano pelo nome do ficheiro
       const match = file.name.match(/20\d{2}/);
       anoAtualLabel = match ? match[0] : 'Ano Atual';
-      const DATA = calcularTudo(matrizAtual);
-      render(DATA);
-      setStatus(`✓ Ficheiro carregado: ${file.name} (${Object.values(matriz).flat().filter(v=>v>0).length} valores)`, 'ok');
+      render(calcularTudo(matrizAtual));
+      setStatus('✓ Ficheiro carregado: ' + file.name, 'ok');
     } catch (err) {
-      setStatus('✗ Erro: ' + err.message, 'err');
+      setStatus('✗ ' + err.message, 'err');
     }
   };
   reader.readAsText(file, 'UTF-8');
 });
 
-// Drag & drop
-uploadBox.addEventListener('dragover', e => { e.preventDefault(); uploadBox.classList.add('dragover'); });
-uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragover'));
-uploadBox.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadBox.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file && (file.name.endsWith('.csv') || file.type.includes('csv'))) {
-    fileInput.files = e.dataTransfer.files;
-    fileInput.dispatchEvent(new Event('change'));
-  } else {
-    setStatus('✗ Por favor, solte um ficheiro .csv', 'err');
-  }
-});
-
-// Template
 document.getElementById('btnTemplate').onclick = () => {
   let csv = 'Loja;Mês;Líquido\n';
   LOJAS_FIXAS.forEach(loja => {
-    for (let m = 1; m <= 10; m++) { // só até Outubro como exemplo
+    for (let m = 1; m <= 10; m++) {
       const val = matriz_2026_exemplo[loja][m-1] || 0;
-      csv += `${loja};${m};${val.toFixed(2)}\n`;
+      csv += loja + ';' + m + ';' + val.toFixed(2) + '\n';
     }
   });
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
@@ -535,17 +471,14 @@ document.getElementById('btnTemplate').onclick = () => {
   a.click();
 };
 
-// Reset
 document.getElementById('btnReset').onclick = () => {
   matrizAtual = JSON.parse(JSON.stringify(matriz_2026_exemplo));
   anoAtualLabel = '2026';
   fileInput.value = '';
-  const DATA = calcularTudo(matrizAtual);
-  render(DATA);
+  render(calcularTudo(matrizAtual));
   setStatus('↺ Dados de exemplo 2026 restaurados', 'ok');
 };
 
-// Inicial
 render(calcularTudo(matrizAtual));
 </script>
 </body>
