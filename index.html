@@ -6,6 +6,7 @@
 <title>Dashboard Vendas | Cooperativa Agrícola de Sintra</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -72,7 +73,14 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .rank-bar{height:6px;background:var(--border);border-radius:3px;margin-top:.3rem;overflow:hidden}
 .rank-bar-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--lime));border-radius:3px}
 .rank-value{font-size:.85rem;font-weight:700;text-align:right;white-space:nowrap}
-.detail-panel{background:var(--card2);border-radius:12px;padding:1.1rem;border:1px solid var(--border);margin-top:.5rem}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;width:min(720px,96vw);max-height:90vh;overflow:auto;padding:1.25rem 1.4rem 1.4rem;box-shadow:0 20px 50px rgba(0,0,0,.45);position:relative}
+.modal-box h3{font-size:1.05rem;font-weight:700;margin-bottom:.35rem;padding-right:2rem}
+.modal-box .modal-sub{font-size:.78rem;color:var(--muted);margin-bottom:1rem}
+.modal-close{position:absolute;top:.75rem;right:.85rem;width:32px;height:32px;border:none;border-radius:8px;background:var(--card2);color:var(--text);font-size:1.2rem;cursor:pointer;line-height:1}
+.modal-close:hover{background:var(--border)}
+.modal-chart{position:relative;height:300px}
 .upload-zone{border:2px dashed var(--border);border-radius:12px;padding:1.5rem;text-align:center;background:var(--card2);margin-bottom:1.2rem;transition:border-color .2s}
 .upload-zone.dragover{border-color:var(--green);background:rgba(34,197,94,.08)}
 .upload-zone p{font-size:.85rem;color:var(--muted);margin:.4rem 0}
@@ -210,10 +218,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <ul class="rank-list" id="rankVolume"></ul>
       </div>
     </div>
-    <div class="section-card detail-panel" id="productDetail" style="display:none">
-      <div class="section-title" id="detailTitle">Evolução do produto</div>
-      <div class="chart-wrap" style="height:280px"><canvas id="chartProduto"></canvas></div>
-    </div>
   </div>
 
   <!-- COMPARATIVOS -->
@@ -288,6 +292,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <span class="file-chip pending" id="chip-2026">Vendas 2026: pendente</span>
         <span class="file-chip pending" id="chip-2025">Vendas 2025: opcional</span>
       </div>
+      <p id="supabaseStatus" style="margin-top:0.8rem;font-size:0.8rem;color:var(--green)">Os dados gravados ficam no Supabase e aparecem para quem abrir o link.</p>
     </div>
     <div class="section-card">
       <div class="section-title">Instruções</div>
@@ -300,9 +305,66 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </ol>
     </div>
   </div>
+
+<!-- Modal flutuante evolução produto -->
+<div class="modal-overlay" id="productModal" onclick="if(event.target===this)closeProductModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProductModal()" title="Fechar">&times;</button>
+    <h3 id="modalTitle">Produto</h3>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="modal-chart"><canvas id="chartProduto"></canvas></div>
+  </div>
+</div>
+
 </main>
 
 <script>
+
+/* ===== SUPABASE ===== */
+const SUPABASE_URL = 'https://uacadlvvonvriiqdxdfr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_pBZHhN4Faqfr70_2FXqezg_UsqWu9JX';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function carregarDoSupabase() {
+  try {
+    const { data, error } = await sb.from('dashboard_vendas').select('*').eq('id', 'atual').maybeSingle();
+    if (error) { console.warn('Supabase load:', error.message); return false; }
+    if (!data) return false;
+    if (Array.isArray(data.resumo_2026) && data.resumo_2026.length) data2026 = data.resumo_2026;
+    if (Array.isArray(data.resumo_2025) && data.resumo_2025.length) data2025 = data.resumo_2025;
+    if (Array.isArray(data.produtos) && data.produtos.length) produtos = data.produtos;
+    console.log('Dados carregados do Supabase', data.atualizado_em);
+    return true;
+  } catch (e) {
+    console.warn('Supabase offline/erro', e);
+    return false;
+  }
+}
+
+async function gravarNoSupabase() {
+  try {
+    const payload = {
+      id: 'atual',
+      resumo_2025: data2025,
+      resumo_2026: data2026,
+      produtos: produtos,
+      atualizado_em: new Date().toISOString()
+    };
+    const { error } = await sb.from('dashboard_vendas').upsert(payload);
+    if (error) {
+      console.error('Erro ao gravar:', error);
+      alert('Erro ao gravar no Supabase: ' + error.message + '\n\nConfirme que criou a tabela (SQL que enviei).');
+      return false;
+    }
+    console.log('Gravado no Supabase');
+    return true;
+  } catch (e) {
+    alert('Erro de rede ao gravar: ' + e.message);
+    return false;
+  }
+}
+
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -527,21 +589,26 @@ function renderTopsellers() {
 function selectProduct(nome) {
   const p=produtos.find(x=>limparNome(x.nome)===nome || x.nome===nome);
   if(!p) return;
-  document.getElementById('productDetail').style.display='block';
-  document.getElementById('detailTitle').textContent=`Evolução mensal — ${limparNome(p.nome)} (${FAMILIAS[getFamilia(p)]||''})`;
+  const fam=FAMILIAS[getFamilia(p)]||'';
+  document.getElementById('modalTitle').textContent=limparNome(p.nome);
+  document.getElementById('modalSub').textContent=(fam?fam+' · ':'')+'Vendas mensais 2025 vs 2026';
+  document.getElementById('productModal').classList.add('open');
   if(chartProduto) chartProduto.destroy();
   chartProduto=new Chart(document.getElementById('chartProduto').getContext('2d'),{
-    type:'line',
+    type:'bar',
     data:{
       labels:MESES_ABREV,
       datasets:[
-        {label:'2026',data:p.mensal2026||[],borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.15)',fill:true,tension:.3,pointRadius:4},
-        {label:'2025',data:p.mensal2025||[],borderColor:'#f97316',backgroundColor:'transparent',borderDash:[5,4],tension:.3,pointRadius:3}
+        {label:'2026',data:p.mensal2026||[],backgroundColor:'rgba(34,197,94,.85)',borderRadius:4},
+        {label:'2025',data:p.mensal2025||[],backgroundColor:'rgba(249,115,22,.75)',borderRadius:4}
       ]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#8ba894'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(typeof c.raw==='number'?c.raw.toLocaleString('pt-PT'):c.raw)}}},
+      plugins:{
+        legend:{labels:{color:'#8ba894'}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(typeof c.raw==='number'?c.raw.toLocaleString('pt-PT',{maximumFractionDigits:0}):c.raw)}}
+      },
       scales:{
         x:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
         y:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}}
@@ -549,6 +616,13 @@ function selectProduct(nome) {
     }
   });
 }
+
+function closeProductModal(){
+  document.getElementById('productModal').classList.remove('open');
+  if(chartProduto){ chartProduto.destroy(); chartProduto=null; }
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProductModal(); });
 
 function renderComparativos() {
   if(chartComp) chartComp.destroy();
@@ -665,6 +739,12 @@ function handleFiles(files){
         renderVisao();
         renderTopsellers();
         renderComparativos();
+        gravarNoSupabase().then(ok => {
+          if (ok) {
+            const tip = document.getElementById('supabaseStatus');
+            if (tip) tip.textContent = '✓ Guardado no Supabase — visível para todos';
+          }
+        });
       }catch(err){
         console.error(err);
         alert('Erro ao ler ficheiro: '+err.message);
@@ -739,7 +819,13 @@ function parseVendas(rows, year){
   }
 }
 
-renderVisao();
+(async function init() {
+  const ok = await carregarDoSupabase();
+  renderVisao();
+  if (ok) {
+    console.log('Dashboard iniciado com dados do Supabase');
+  }
+})();
 </script>
 </body>
 </html>
