@@ -253,7 +253,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="header-bar">
       <div>
         <h2>Por Loja</h2>
-        <div class="subtitle">Vendas líquidas por loja · YTD 2025 vs 2026</div>
+        <div class="subtitle">Vendas líquidas por loja · YTD e mês a mês 2025 vs 2026</div>
       </div>
     </div>
     <div class="section-card">
@@ -266,6 +266,38 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <table id="tableLojas">
           <thead>
             <tr><th>Loja</th><th>Líq. 2025</th><th>Líq. 2026</th><th>Var. €</th><th>Var. %</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <span>Mês a mês por loja (2026)</span>
+        <select id="selectLojaMes" onchange="renderLojaMensal()" style="background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.35rem .6rem;font-size:.8rem">
+          <option value="TODAS">Todas as lojas</option>
+          <option value="Sintra">Sintra</option>
+          <option value="Colares">Colares</option>
+          <option value="Albarraque">Albarraque</option>
+          <option value="Arneiro">Arneiro</option>
+          <option value="Mem Martins">Mem Martins</option>
+          <option value="Sabugo">Sabugo</option>
+        </select>
+      </div>
+      <div class="chart-wrap" style="height:340px"><canvas id="chartLojaMes"></canvas></div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Escolha uma loja no seletor para ver 2025 vs 2026 só dessa loja, ou “Todas” para o total mensal por loja em 2026.</p>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Tabela mês a mês por loja (2026)</div>
+      <div style="overflow-x:auto">
+        <table id="tableLojaMes">
+          <thead>
+            <tr>
+              <th>Loja</th>
+              <th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th>
+              <th>Jul</th><th>Ago</th><th>Set</th><th>Out</th><th>Nov</th><th>Dez</th>
+              <th>Total</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -452,7 +484,7 @@ let produtos = [
 ];
 
 let familiaAtual = 'ALL';
-let chartMensal=null, chartProduto=null, chartComp=null, chartFamilias=null, chartLojas=null;
+let chartMensal=null, chartProduto=null, chartComp=null, chartFamilias=null, chartLojas=null, chartLojaMes=null;
 
 const fmtEur = v => new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v||0);
 const fmtPct = v => (v>=0?'+':'')+(v||0).toFixed(1)+'%';
@@ -696,6 +728,71 @@ function renderLojas() {
       <td class="${x.varEur>=0?'pos':'neg'}">${fmtEur(x.varEur)}</td>
       <td class="${x.varPct>=0?'pos':'neg'}">${fmtPct(x.varPct)}</td>
     </tr>`).join('');
+
+  // Tabela mês a mês 2026
+  document.querySelector('#tableLojaMes tbody').innerHTML=LOJAS.map(loja=>{
+    const vals=matriz_2026[loja]||Array(12).fill(0);
+    const total=vals.reduce((a,b)=>a+(b||0),0);
+    return `<tr>
+      <td><strong>${loja}</strong></td>
+      ${vals.map(v=>`<td>${v?fmtEur(v):'—'}</td>`).join('')}
+      <td><strong>${fmtEur(total)}</strong></td>
+    </tr>`;
+  }).join('');
+
+  renderLojaMensal();
+}
+
+function renderLojaMensal() {
+  const sel=document.getElementById('selectLojaMes');
+  const loja=sel?sel.value:'TODAS';
+  const cores=['#22c55e','#3b82f6','#eab308','#f97316','#a3e635','#8b5cf6'];
+
+  if(chartLojaMes) chartLojaMes.destroy();
+  const ctx=document.getElementById('chartLojaMes');
+  if(!ctx) return;
+
+  if(loja==='TODAS'){
+    chartLojaMes=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:MESES_ABREV,
+        datasets:LOJAS.map((l,i)=>({
+          label:l,
+          data:matriz_2026[l]||Array(12).fill(0),
+          backgroundColor:cores[i],
+          borderRadius:3
+        }))
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#8ba894',boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtEur(c.raw)}}},
+        scales:{
+          x:{stacked:false,ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{ticks:{color:'#8ba894',callback:v=>(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}}
+        }
+      }
+    });
+  } else {
+    chartLojaMes=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:MESES_ABREV,
+        datasets:[
+          {label:loja+' 2026',data:matriz_2026[loja]||Array(12).fill(0),backgroundColor:'rgba(34,197,94,.85)',borderRadius:4},
+          {label:loja+' 2025',data:matriz_2025[loja]||Array(12).fill(0),backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#8ba894'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtEur(c.raw)}}},
+        scales:{
+          x:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{ticks:{color:'#8ba894',callback:v=>(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}}
+        }
+      }
+    });
+  }
 }
 
 /* Upload */
