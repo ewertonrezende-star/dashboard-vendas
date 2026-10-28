@@ -235,6 +235,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="subtitle">Top 15 por valor e por quantidade · Clique no produto para ver evolução mensal</div>
       </div>
     </div>
+    <div id="familiaContagem" style="font-size:.85rem;color:var(--muted);margin-bottom:.5rem"></div>
     <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem" id="familiaFilters">
       <button class="btn btn-primary fam-btn active" data-fam="ALL" onclick="filterFamilia('ALL')">Todas</button>
       <button class="btn fam-btn" data-fam="01" onclick="filterFamilia('01')">01 Cereais</button>
@@ -408,7 +409,10 @@ async function carregarDoSupabase() {
     if (!data) return false;
     if (Array.isArray(data.resumo_2026) && data.resumo_2026.length) data2026 = data.resumo_2026;
     if (Array.isArray(data.resumo_2025) && data.resumo_2025.length) data2025 = data.resumo_2025;
-    if (Array.isArray(data.produtos) && data.produtos.length) produtos = data.produtos;
+    if (Array.isArray(data.produtos) && data.produtos.length) {
+      produtos = data.produtos;
+      reaplicarFamilias();
+    }
     console.log('Dados carregados do Supabase', data.atualizado_em);
     return true;
   } catch (e) {
@@ -456,17 +460,32 @@ const FAMILIAS = {
   '09':'Prestação de Serviços'
 };
 
-/* Exceções: códigos cujo 1º dígito NÃO coincide com a família da auditoria (132 artigos) */
+/* Exceções: códigos cujo 1º dígito NÃO coincide com a família da auditoria */
 const FAMILIA_EXCECOES = {"81100010":"02","81100014":"02","81100023":"02","81100039":"02","81100041":"02","81100050":"02","81100083":"02","81100099":"02","81100114":"02","81100217":"02","81100221":"02","81100230":"02","81100236":"02","81100411":"02","81100429":"02","81100430":"02","81100438":"02","81100442":"02","81100444":"02","81100446":"02","81100471":"02","81100558":"02","81100713":"02","81100823":"02","81100824":"02","81100825":"02","81106516":"02","81107000":"02","81108050":"02","81108051":"02","81108053":"02","81108054":"02","81108055":"02","81109012":"02","81109013":"02","81109025":"02","81109031":"02","81109032":"02","81109035":"02","81109036":"02","81109037":"02","81109045":"02","81109047":"02","81109049":"02","81109058":"02","81109101":"02","81109105":"02","81109303":"02","81109326":"02","81154010":"02","81202119":"02","82121200":"02","82127010":"02","82134040":"02","82135010":"02","82135030":"02","82137010":"02","82161040":"02","82161200":"02","82164000":"02","82164040":"02","82165010":"02","82165030":"02","82167010":"02","82167020":"02","82600004":"02","83500002":"02","83500007":"02","83500009":"02","83500052":"02","81201011":"03","81201022":"03","81201079":"03","81201081":"03","81201083":"03","81201089":"03","81201101":"03","81201129":"03","81201139":"03","81201140":"03","81201141":"03","81201143":"03","81201145":"03","81201147":"03","81202011":"03","81202021":"03","81202024":"03","81202031":"03","81202115":"03","81202124":"03","81202125":"03","81202137":"03","81202143":"03","81203196":"03","83137065":"05","81201120":"06","82001600":"06","82001601":"06","82001602":"06","82001603":"06","82001604":"06","82001605":"06","82001606":"06","82001607":"06","82001608":"06","82001609":"06","82001610":"06","82001611":"06","82002521":"06","82300001":"06","82300002":"06","82300003":"06","82300004":"06","82300005":"06","82300006":"06","82300007":"06","82300008":"06","82300009":"06","82300010":"06","82300015":"06","82300016":"06","82300017":"06","82300021":"06","82300029":"06","81100237":"07","81100305":"07","81100501":"07","81106511":"07","81106512":"07","81109017":"07","81109050":"07","81109053":"07"};
+
+/* Fallback por nome (artigos da auditoria com exceção) */
+const FAMILIA_EXCECOES_NOME = {"raçao p/cavalos mant esmag 30kg (galrao)":"02","providog essencial mix adulto 18kg vaca e arroz":"02","mistura p/coelhos anoes 5kg (galrao)":"02","granulado peixe agua fria 5kg (galrao)":"02","raçao p/cavalos trab esmag 40kg (galrao)":"02","providog seleçao borrego e arroz 15kg":"02","mistura p/coelhos anoes 500gr (galrao)":"02","raçao p/cavalo simples manut 30kg (galrao)":"02","lote cereais frangos 5kg":"02","mistura p/coelhos anoes sacos 25kg (galrao)":"02","mistura p/pintos saco 25kg (galrao)":"02","massa p/animais saco de 5kg diaco":"02","mistura p/pintos 5kg (galrao)":"02","friskies gato atum & verduras 2 kg 12219345":"02","mistura p/frangos belguita reprod 25kg (galrao)":"02","mistura p/frangos belguita 25kg (galrao)":"02","raçao simples p/coelho 30kg":"02","raçao simples p/coelho 5kg galrao":"02","mistura p/frangos belguita 20kg (galrao)":"02","mistura p/frangos  reprod 20kg (galrao)":"02","raçao simples de ovinos 30kg galrao":"02","massa p/animais saco de 5kg (galrao)":"02","aliment compl pintos/patos/perus 5kg camperstarter":"02","avenal dog salmao e arroz 15kg":"02","avenal dog frango e arroz 15kg":"02","avenal dog borrego e arroz 15kg":"02","coleira p/gatos sortida 17550":"02","alimento completo cão adulto 5kg \"agrisintra\"":"02","mistura para aves (nature aves) 5 kg cargill":"02","mistura para aves (nature aves) 30kg cargill":"02","mistura para coelhos (natura coelhos) 5kg cargill":"02","mistura para aves (nature aves) 25kg cargill":"02","mistura para coelhos (natura coelhos) 25kg cargill":"02","lote cereais pintos 5kg (ribeiros)":"02","lote cereais pintos 25kg (ribeiros)":"02","mistura cereais coelhos 25kg (ribeiros)":"02","mistura cereais corrente 5kg (ribeiros)":"02","mistura cereais corrente 25kg (ribeiros)":"02","mistura cereais coelhos 5kg (ribeiros)":"02","mistura cereais p/ovinos 30kg (ribeiros)":"02","mistura cereais p/ovinos 25kg (ribeiros)":"02","massa p/caes 3kg (ribeiros)":"02","massa p/caes 5kg (ribeiros)":"02","massa p/caes 2,5kg (ribeiros)":"02","mistura cereais p/cavalos 25kg (ribeiros)":"02","mistura p/cavalos ribmix saco 30kg (ribeiros)":"02","mistura p/cavalos ribmix saco 25kg (ribeiros)":"02","teycat tuna (atum) 415gr":"02","petcool gato atum 405gr":"02","ração granulado equidios 401 (galrao)":"02","bloc cães + gatos gran. 900 gr. 4732":"02","avidiaco galinhas 5kg mistura galinhas poedeiras":"02","lapidiaco unico (alim nat coelhos) 5kg":"02","alimento natural p/cavalos 25kg":"02","ovidiaco manutençao (ovinos/capr) 25kg":"02","alimento natural p/ovinos e caprinos 25kg":"02","lapidiaco unico (alim nat coelhos) 25kg":"02","lote cereais corrente 20kg para aves":"02","avidiaco galinhas 20kg mistura galinhas poedeiras":"02","equidiaco manutençao (cavalos) 20kg":"02","equidiaco extra 20kg p/cavalos sujeitos a trab reg":"02","ovidiaco manutençao (ovinos/capr) 20kg":"02","alimento natural p/ovinos e caprinos 30kg":"02","lapidiaco unico (alim nat. coelhos) 20kg":"02","alimento natural p/coelhos 20kg":"02","fardo palha de trigo (galrao)":"02","pro plan esterilizado gato salmao e atum 85gr":"02","gourmet gold gato atum e peixe 85gr":"02","gourmet nature gato lascas de atum c/gambas 70gr":"02","purina one cao mini c/frango arroz e tomate 85gr":"02","adubo hortensias azaleas acido 1kg 4856":"03","adubo liquido geranios 1150gr 4863":"03","adubo universal 1 kg  4672":"03","adubo plantas tropicais 1kg 4676":"03","adubo biologico 5kg 4680 acros":"03","adubo biológico morangos 1000 gr. 4714":"03","adubo energia amarela-citrinos 1 kg 4752":"03","adubo biológico horto 1000 gr. 4712":"03","adubo energia citrinos - 1200 gr. 4682":"03","adubo oliveiras 1000gr 4711":"03","adubo liquido bonsai 570gr 4861":"03","adubo liquido plantas verdes 1150gr 4871":"03","adubo biologico liq universal 780ml 4649":"03","substrato para bonsais 5lt 4686":"03","adubo liq.enraizamento 500 ml 4632/4878":"03","substrato para orquideas-5 lt 4641":"03","adubo especial orquideas 300gr 4613":"03","adubo especial rosas 1 kg 4611 granul.":"03","adubo liq. p/ cactos - 500 ml 4635 570 g. 4870":"03","adubo liquido universal 1150 g. 4865":"03","adubo liquido orquideas 570 g. 4866":"03","adubo liquido universal 570 g. 4864 ( acros )":"03","adubo liquido petunias 1150 gr 4868":"03","adubo eliminador de musgo 1kg 4650 4855":"03","uso sementes hort. jardinagem":"05","pá para cinza 005.6050 (antónio mateus)":"06","prego setia 12 2500022":"06","prego 1/2 galeota 11 2500024":"06","prego galeota 10 2500026":"06","prego cavilha 5 2500032":"06","prego cavilha 6 2500034":"06","prego cavilha 7 2500036":"06","prego fasquia 4x14 2500016":"06","prego telhado 8 2500030":"06","prego cavilha 8 2500038":"06","prego 1/2 telhado 9 2500028":"06","prego fasquia 4x15 2500014":"06","prego fasquia 3x15 2500012":"06","cj abraçadeira atar plantas 20 pçs 31550":"06","pulverizador np-04-15a 4,5m 512664 bzw":"06","pulverizador np-04-12a 3,7m 512663 bzw":"06","bico pulverizador kvf 8a 2,4m 512816 bzw":"06","bico pulverizador kvf 10a 3,0m 512667 bzw":"06","bico pulverizador kvf 12a 3,7m 512668 bzw":"06","bico pulverizador kvf 15a 4,5m 512669 bzw":"06","bico pulverizador kvf 17a 5,2m 512670 bzw":"06","aspersor pro 1/2\" 512672 bzw":"06","aspersor rps 3/4\" 512673 bzw":"06","aspersor rps select 3/4\" 512817 bzw":"06","gotejador ac desmontável 2l/h 509099 bzw":"06","gotejador ac desmontável 4l/h 509097 bzw":"06","gotejador ac desmontável 8l/h 509098 bzw":"06","corpo pulverizador pro-s4 bzw":"06","pulverizador np-04-17a bzw 512665":"06","trinca de arroz 5kg (galrao)":"07","trinca de arroz 25kg (galrao)":"07","trinca de arroz 5kg (diaco)":"07","barrita mel p/pistacideos 150gr a5010":"07","barrita mel p/periquitos 60gr a5009":"07","trinca de arroz 5kg (ribeiros)":"07","trinca de arroz 30kg (ribeiros)":"07","trinca de arroz 25kg (ribeiros)":"07"};
+
+function normalizarCodigo(cod) {
+  if (cod == null || cod === '') return '';
+  let s = String(cod).trim();
+  s = s.replace(/^artigo\s*:?\s*/i, '').trim();
+  const dig = s.replace(/\D/g, '');
+  if (dig.length >= 6) return dig;
+  return s;
+}
 
 /* Família a partir do código – mapa fixo da auditoria Coopsintra */
 function familiaFromCodigo(cod) {
-  if (!cod) return '08';
-  const s = String(cod).trim();
+  const s = normalizarCodigo(cod);
+  if (!s) return '08';
   if (FAMILIA_EXCECOES[s]) return FAMILIA_EXCECOES[s];
-  // Serviços / textos especiais
+  // variações sem zeros à esquerda
+  const s2 = s.replace(/^0+/, '');
+  for (const k of Object.keys(FAMILIA_EXCECOES)) {
+    if (k === s || k.replace(/^0+/, '') === s2) return FAMILIA_EXCECOES[k];
+  }
   if (/^9/.test(s) || /^(CABIMENTO|COMPROMISSO|ENCOMENDA|ENTREGA|LOCAL|PRAZO|PROCESSO|REF|REQUISI|SERIE|VALIDADE)/i.test(s)) return '09';
-  // Regra geral: 1º dígito do código = família (alinhado com a auditoria)
   if (/^1/.test(s)) return '01';
   if (/^2/.test(s)) return '02';
   if (/^3/.test(s)) return '03';
@@ -477,6 +496,17 @@ function familiaFromCodigo(cod) {
   if (/^8/.test(s)) return '08';
   return '08';
 }
+
+function familiaFromNome(nome) {
+  if (!nome) return null;
+  const n = String(nome).trim().toLowerCase().replace(/\s+/g, ' ');
+  if (FAMILIA_EXCECOES_NOME[n]) return FAMILIA_EXCECOES_NOME[n];
+  for (const [k, v] of Object.entries(FAMILIA_EXCECOES_NOME)) {
+    if (n === k || n.includes(k) || k.includes(n)) return v;
+  }
+  return null;
+}
+
 
 function limparNome(nome) {
   if (!nome) return '';
@@ -503,12 +533,29 @@ function isServico(nome) {
 }
 
 function getFamilia(p) {
-  // Sempre prioriza o código → mapa fixo da auditoria
-  if (p.codigo) return familiaFromCodigo(p.codigo);
+  if (p.codigo) {
+    const f = familiaFromCodigo(p.codigo);
+    // Código 8xxxx classificado como Diversos: tenta nome (ex.: rações 811…)
+    if (f === '08' && p.nome) {
+      const byName = familiaFromNome(p.nome);
+      if (byName) return byName;
+    }
+    return f;
+  }
+  if (p.nome) {
+    const byName = familiaFromNome(p.nome);
+    if (byName) return byName;
+  }
   if (p.familia) return String(p.familia).padStart(2,'0');
   if (typeof isServico === 'function' && isServico(p.nome)) return '09';
   return '08';
 }
+
+function reaplicarFamilias() {
+  if (!Array.isArray(produtos)) return;
+  produtos.forEach(p => { p.familia = getFamilia(p); });
+}
+
 
 const LOJAS = ['Sintra','Colares','Albarraque','Arneiro','Mem Martins','Sabugo'];
 const matriz_2025 = {
@@ -631,11 +678,17 @@ function filterFamilia(cod) {
 }
 
 function renderTopsellers() {
+  reaplicarFamilias();
   let lista=produtos.map(p=>({...p,familia:getFamilia(p),nome:limparNome(p.nome)||p.nome}));
   if(familiaAtual!=='ALL') lista=lista.filter(p=>p.familia===familiaAtual);
+  const contadorEl=document.getElementById('familiaContagem');
+  if(contadorEl){
+    const nomeFam=familiaAtual==='ALL'?'Todas':(FAMILIAS[familiaAtual]||familiaAtual);
+    contadorEl.textContent=lista.length+' artigo(s) · '+nomeFam;
+  }
 
-  const byVal=[...lista].sort((a,b)=>b.val2026-a.val2026).slice(0,15);
-  const byVol=[...lista].sort((a,b)=>b.qtd2026-a.qtd2026).slice(0,15);
+  const byVal=[...lista].sort((a,b)=>b.val2026-a.val2026).slice(0,40);
+  const byVol=[...lista].sort((a,b)=>b.qtd2026-a.qtd2026).slice(0,40);
   const maxV=byVal[0]?.val2026||1;
   const maxQ=byVol[0]?.qtd2026||1;
 
@@ -960,6 +1013,7 @@ function parseVendas(rows, year){
       if(m){ m.qtd2025=ex.qtd2025; m.val2025=ex.val2025; m.mensal2025=ex.mensal2025; }
     });
     produtos=novos;
+    reaplicarFamilias();
   } else {
     arr.forEach(p25=>{
       const found=produtos.find(p=>p.codigo===p25.codigo||p.nome===p25.nome);
