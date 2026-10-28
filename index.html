@@ -375,7 +375,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <li><strong>Resumo</strong> — atualiza a Visão Geral (acumulado e líquido).</li>
         <li><strong>Vendas 2026</strong> — atualiza Topsellers e famílias.</li>
         <li><strong>Vendas 2025</strong> — opcional (já existe base; use só se quiser atualizar).</li>
-        <li>Famílias vêm da base de artigos (código do artigo → família 01–09). Não precisa de upload de artigos.</li>
+        <li>Famílias FIXAS conforme auditoria Coopsintra (código → família 01–09, com exceções da base de artigos). Não precisa de upload de artigos.</li>
         <li>Nomes limpos: remove texto entre parênteses (ex.: fornecedor).</li>
       </ol>
     </div>
@@ -443,17 +443,30 @@ async function gravarNoSupabase() {
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
+/* Famílias FIXAS conforme auditoria_completa_familias_coopsintra.xlsx */
 const FAMILIAS = {
-  '01':'Cereais','02':'Rações','03':'Adubos','04':'Produtos Agroquímicos',
-  '05':'Sementes','06':'Maq. Ferramentas e Alfaias','07':'Produtos Alimentares',
-  '08':'Produtos Diversos','09':'Prestação de Serviços'
+  '01':'Cereais',
+  '02':'Rações',
+  '03':'Adubos',
+  '04':'Produtos Agroquímicos',
+  '05':'Sementes',
+  '06':'Máquinas, Ferramentas e Alfaias',
+  '07':'Produtos Alimentares',
+  '08':'Produtos Diversos',
+  '09':'Prestação de Serviços'
 };
 
-/* Família a partir do código do artigo (base consulta artigos – lógica fixa) */
+/* Exceções: códigos cujo 1º dígito NÃO coincide com a família da auditoria (132 artigos) */
+const FAMILIA_EXCECOES = {"81100010":"02","81100014":"02","81100023":"02","81100039":"02","81100041":"02","81100050":"02","81100083":"02","81100099":"02","81100114":"02","81100217":"02","81100221":"02","81100230":"02","81100236":"02","81100411":"02","81100429":"02","81100430":"02","81100438":"02","81100442":"02","81100444":"02","81100446":"02","81100471":"02","81100558":"02","81100713":"02","81100823":"02","81100824":"02","81100825":"02","81106516":"02","81107000":"02","81108050":"02","81108051":"02","81108053":"02","81108054":"02","81108055":"02","81109012":"02","81109013":"02","81109025":"02","81109031":"02","81109032":"02","81109035":"02","81109036":"02","81109037":"02","81109045":"02","81109047":"02","81109049":"02","81109058":"02","81109101":"02","81109105":"02","81109303":"02","81109326":"02","81154010":"02","81202119":"02","82121200":"02","82127010":"02","82134040":"02","82135010":"02","82135030":"02","82137010":"02","82161040":"02","82161200":"02","82164000":"02","82164040":"02","82165010":"02","82165030":"02","82167010":"02","82167020":"02","82600004":"02","83500002":"02","83500007":"02","83500009":"02","83500052":"02","81201011":"03","81201022":"03","81201079":"03","81201081":"03","81201083":"03","81201089":"03","81201101":"03","81201129":"03","81201139":"03","81201140":"03","81201141":"03","81201143":"03","81201145":"03","81201147":"03","81202011":"03","81202021":"03","81202024":"03","81202031":"03","81202115":"03","81202124":"03","81202125":"03","81202137":"03","81202143":"03","81203196":"03","83137065":"05","81201120":"06","82001600":"06","82001601":"06","82001602":"06","82001603":"06","82001604":"06","82001605":"06","82001606":"06","82001607":"06","82001608":"06","82001609":"06","82001610":"06","82001611":"06","82002521":"06","82300001":"06","82300002":"06","82300003":"06","82300004":"06","82300005":"06","82300006":"06","82300007":"06","82300008":"06","82300009":"06","82300010":"06","82300015":"06","82300016":"06","82300017":"06","82300021":"06","82300029":"06","81100237":"07","81100305":"07","81100501":"07","81106511":"07","81106512":"07","81109017":"07","81109050":"07","81109053":"07"};
+
+/* Família a partir do código – mapa fixo da auditoria Coopsintra */
 function familiaFromCodigo(cod) {
   if (!cod) return '08';
   const s = String(cod).trim();
+  if (FAMILIA_EXCECOES[s]) return FAMILIA_EXCECOES[s];
+  // Serviços / textos especiais
   if (/^9/.test(s) || /^(CABIMENTO|COMPROMISSO|ENCOMENDA|ENTREGA|LOCAL|PRAZO|PROCESSO|REF|REQUISI|SERIE|VALIDADE)/i.test(s)) return '09';
+  // Regra geral: 1º dígito do código = família (alinhado com a auditoria)
   if (/^1/.test(s)) return '01';
   if (/^2/.test(s)) return '02';
   if (/^3/.test(s)) return '03';
@@ -490,9 +503,10 @@ function isServico(nome) {
 }
 
 function getFamilia(p) {
-  if (p.familia) return String(p.familia).padStart(2,'0');
+  // Sempre prioriza o código → mapa fixo da auditoria
   if (p.codigo) return familiaFromCodigo(p.codigo);
-  if (isServico(p.nome)) return '09';
+  if (p.familia) return String(p.familia).padStart(2,'0');
+  if (typeof isServico === 'function' && isServico(p.nome)) return '09';
   return '08';
 }
 
