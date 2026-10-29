@@ -188,13 +188,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="header-bar">
       <div>
         <h2>Visão Geral</h2>
-        <div class="subtitle">Desempenho comercial · Acumulado 2025 vs 2026</div>
+        <div class="subtitle">Desempenho comercial · Evolução 2024 → 2025 → 2026</div>
       </div>
       <div class="header-actions">
         <button class="btn" onclick="showView('upload')">⬆ Carregar ficheiros</button>
       </div>
     </div>
-    <div class="kpi-grid">
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
       <div class="kpi-card green">
         <div class="kpi-label">Acumulado 2026</div>
         <div class="kpi-value green" id="kpi-2026">€ 0</div>
@@ -205,10 +205,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="kpi-value" id="kpi-2025">€ 0</div>
         <div class="kpi-sub">Mesmo período 2025</div>
       </div>
+      <div class="kpi-card" style="border-color:#60a5fa">
+        <div class="kpi-label">Acumulado 2024</div>
+        <div class="kpi-value" id="kpi-2024" style="color:#60a5fa">€ 0</div>
+        <div class="kpi-sub">Mesmo período 2024</div>
+      </div>
       <div class="kpi-card red">
-        <div class="kpi-label">Variação Acumulada</div>
+        <div class="kpi-label">Var. 2026 vs 2025</div>
         <div class="kpi-value red" id="kpi-var">0%</div>
         <div class="kpi-sub" id="kpi-var-abs">€ 0</div>
+      </div>
+      <div class="kpi-card" style="border-color:#a78bfa">
+        <div class="kpi-label">Var. 2026 vs 2024</div>
+        <div class="kpi-value" id="kpi-var24" style="color:#a78bfa">0%</div>
+        <div class="kpi-sub" id="kpi-var24-abs">€ 0</div>
       </div>
       <div class="kpi-card gold">
         <div class="kpi-label">Melhor mês 2026</div>
@@ -217,9 +227,14 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div class="section-card">
-      <div class="section-title">Evolução do Acumulado 2026 vs 2025</div>
+      <div class="section-title">Evolução do Acumulado · 2024 vs 2025 vs 2026</div>
       <div class="chart-wrap"><canvas id="chartMensal"></canvas></div>
-      <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Mostra apenas o valor acumulado até cada mês.</p>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">Valor acumulado até cada mês (mesmo período nos 3 anos).</p>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Evolução Anual (Total do Ano)</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartAnual"></canvas></div>
+      <div id="anualResumo" style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.8rem;font-size:.85rem;color:var(--muted)"></div>
     </div>
     <div class="section-card">
       <div class="section-title">Resumo por Trimestre</div>
@@ -294,7 +309,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="header-bar">
       <div>
         <h2>Comparativos</h2>
-        <div class="subtitle">Líquido mensal e acumulado 2026 vs 2025</div>
+        <div class="subtitle">Líquido mensal e acumulado · 2024 vs 2025 vs 2026</div>
       </div>
     </div>
     <div class="section-card">
@@ -307,8 +322,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <table id="tableVar">
           <thead>
             <tr>
-              <th>Mês</th><th>Líq. 2026</th><th>Líq. 2025</th><th>Var. €</th><th>Var. %</th>
-              <th>Acum. 2026</th><th>Acum. 2025</th><th>Var. Acum. %</th>
+              <th>Mês</th>
+              <th>Líq. 2026</th><th>Líq. 2025</th><th>Líq. 2024</th>
+              <th>Var. 26/25 €</th><th>Var. 26/25 %</th>
+              <th>Var. 26/24 €</th><th>Var. 26/24 %</th>
+              <th>Acum. 2026</th><th>Acum. 2025</th><th>Acum. 2024</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -570,8 +588,10 @@ function normalizarCodigo(cod) {
   if (cod == null || cod === '') return '';
   let s = String(cod).trim();
   s = s.replace(/^artigo\s*:?\s*/i, '').trim();
-  const dig = s.replace(/\D/g, '');
-  if (dig.length >= 6) return dig;
+  if (/^\d+\.0+$/.test(s)) s = s.replace(/\.0+$/, '');
+  let dig = s.replace(/\D/g, '');
+  if (dig.length > 8 && dig.charAt(0) === '0') dig = dig.replace(/^0+/, '');
+  if (dig.length >= 5) return dig;
   return s;
 }
 
@@ -580,10 +600,16 @@ function familiaFromCodigo(cod) {
   const s = normalizarCodigo(cod);
   if (!s) return '08';
   if (FAMILIA_EXCECOES[s]) return FAMILIA_EXCECOES[s];
-  // variações sem zeros à esquerda
   const s2 = s.replace(/^0+/, '');
-  for (const k of Object.keys(FAMILIA_EXCECOES)) {
-    if (k === s || k.replace(/^0+/, '') === s2) return FAMILIA_EXCECOES[k];
+  const keys = Object.keys(FAMILIA_EXCECOES);
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    if (k === s || k === s2) return FAMILIA_EXCECOES[k];
+    const k2 = k.replace(/^0+/, '');
+    if (k2 === s || k2 === s2) return FAMILIA_EXCECOES[k];
+    if (s.length >= 7 && k.length >= 7 && (s.slice(-8) === k.slice(-8) || s.slice(-7) === k.slice(-7))) {
+      return FAMILIA_EXCECOES[k];
+    }
   }
   if (/^9/.test(s) || /^(CABIMENTO|COMPROMISSO|ENCOMENDA|ENTREGA|LOCAL|PRAZO|PROCESSO|REF|REQUISI|SERIE|VALIDADE)/i.test(s)) return '09';
   if (/^1/.test(s)) return '01';
@@ -600,10 +626,25 @@ function familiaFromCodigo(cod) {
 function familiaFromNome(nome) {
   if (!nome) return null;
   const n = String(nome).trim().toLowerCase().replace(/\s+/g, ' ');
-  if (FAMILIA_EXCECOES_NOME[n]) return FAMILIA_EXCECOES_NOME[n];
-  for (const [k, v] of Object.entries(FAMILIA_EXCECOES_NOME)) {
-    if (n === k || n.includes(k) || k.includes(n)) return v;
+  if (typeof FAMILIA_EXCECOES_NOME !== 'undefined' && FAMILIA_EXCECOES_NOME[n]) return FAMILIA_EXCECOES_NOME[n];
+  if (typeof FAMILIA_EXCECOES_NOME !== 'undefined') {
+    const keys = Object.keys(FAMILIA_EXCECOES_NOME);
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (n === k || n.indexOf(k) >= 0 || k.indexOf(n) >= 0) return FAMILIA_EXCECOES_NOME[k];
+    }
   }
+  const racoesKw = [
+    'avidiaco','lapidiaco','equidiaco','ovidiaco','manje','selecçao','selecao',
+    'nanta ','provi ','hi-pro','anipheed','salvog','camper','cunilap','cunisafe',
+    'providog','avenal dog','avenal cat','friskies','cat chow','dog chow',
+    'mistura p/','mistura para','ração p/','racao p/','raçao p/',
+    'lote cereais','natureza aves','natura coelhos','nature aves'
+  ];
+  for (let i = 0; i < racoesKw.length; i++) {
+    if (n.indexOf(racoesKw[i]) >= 0) return '02';
+  }
+  if (/\badubo\b|substrato|fertiliz|composto fertil|estrume/.test(n)) return '03';
   return null;
 }
 
@@ -638,20 +679,25 @@ function isServico(nome) {
 }
 
 function getFamilia(p) {
+  if (!p) return '08';
   if (p.codigo) {
     const f = familiaFromCodigo(p.codigo);
-    // Código 8xxxx classificado como Diversos: tenta nome (ex.: rações 811…)
-    if (f === '08' && p.nome) {
+    if (f && f !== '08') return f;
+    if (p.nome) {
       const byName = familiaFromNome(p.nome);
       if (byName) return byName;
     }
-    return f;
+    if (f) return f;
   }
   if (p.nome) {
     const byName = familiaFromNome(p.nome);
     if (byName) return byName;
   }
-  if (p.familia) return String(p.familia).padStart(2,'0');
+  if (p.familia) {
+    let f = String(p.familia).replace(/\D/g, '');
+    if (f.length === 1) f = '0' + f;
+    if (f.length >= 2) return f.slice(-2);
+  }
   if (typeof isServico === 'function' && isServico(p.nome)) return '09';
   return '08';
 }
@@ -724,59 +770,140 @@ function showView(name) {
 }
 
 function renderVisao() {
-  const acum2026=calcAcum(data2026);
-  const acum2025=calcAcum(data2025);
-  let lastIdx=0;
-  for(let i=11;i>=0;i--){ if((data2026[i]||0)>0){ lastIdx=i; break; } }
-  const total2026=acum2026[lastIdx]||0;
-  const total2025=acum2025[lastIdx]||0;
-  const varAbs=total2026-total2025;
-  const varPct=total2025?(varAbs/total2025*100):0;
+  const acum2026 = calcAcum(data2026);
+  const acum2025 = calcAcum(data2025);
+  const acum2024 = calcAcum(typeof data2024 !== 'undefined' ? data2024 : new Array(12).fill(0));
 
-  document.getElementById('kpi-2026').textContent=fmtEur(total2026);
-  document.getElementById('kpi-2025').textContent=fmtEur(total2025);
-  document.getElementById('kpi-var').textContent=fmtPct(varPct);
-  document.getElementById('kpi-var').className='kpi-value '+(varPct>=0?'green':'red');
-  document.getElementById('kpi-var-abs').textContent=(varAbs>=0?'+ ':'')+fmtEur(varAbs);
+  let lastIdx = 0;
+  for (let i = 11; i >= 0; i--) {
+    if ((data2026[i] || 0) > 0) { lastIdx = i; break; }
+  }
 
-  let maxVal=0, maxMes=0;
-  data2026.forEach((v,i)=>{ if(v>maxVal){ maxVal=v; maxMes=i; } });
-  document.getElementById('kpi-melhor').textContent=MESES[maxMes];
-  document.getElementById('kpi-melhor-val').textContent=fmtEur(maxVal);
+  const a26 = acum2026[lastIdx] || 0;
+  const a25 = acum2025[lastIdx] || 0;
+  const a24 = acum2024[lastIdx] || 0;
+  const d25 = a26 - a25;
+  const p25 = a25 ? (d25 / a25 * 100) : 0;
+  const d24 = a26 - a24;
+  const p24 = a24 ? (d24 / a24 * 100) : 0;
 
-  if(chartMensal) chartMensal.destroy();
-  chartMensal=new Chart(document.getElementById('chartMensal').getContext('2d'),{
-    type:'line',
-    data:{
-      labels:MESES_ABREV,
-      datasets:[
-        {label:'Acumulado 2026',data:acum2026,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.3,pointRadius:4,borderWidth:3},
-        {label:'Acumulado 2025',data:acum2025,borderColor:'#f97316',backgroundColor:'transparent',borderDash:[6,4],tension:.3,pointRadius:3,borderWidth:2}
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:'#8ba894',boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtEur(c.raw)}}},
-      scales:{
-        x:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
-        y:{ticks:{color:'#8ba894',callback:v=>(v>=1000?(v/1000).toFixed(0)+'k':v)},grid:{color:'rgba(255,255,255,.04)'}}
+  const el = function(id) { return document.getElementById(id); };
+  if (el('kpi-2026')) el('kpi-2026').textContent = fmtEur(a26);
+  if (el('kpi-2025')) el('kpi-2025').textContent = fmtEur(a25);
+  if (el('kpi-2024')) el('kpi-2024').textContent = fmtEur(a24);
+  if (el('kpi-var')) {
+    el('kpi-var').textContent = fmtPct(p25);
+    el('kpi-var').className = 'kpi-value ' + (p25 >= 0 ? 'green' : 'red');
+  }
+  if (el('kpi-var-abs')) el('kpi-var-abs').textContent = fmtEur(d25) + ' vs 2025';
+  if (el('kpi-var24')) {
+    el('kpi-var24').textContent = fmtPct(p24);
+    el('kpi-var24').style.color = p24 >= 0 ? '#22c55e' : '#ef4444';
+  }
+  if (el('kpi-var24-abs')) el('kpi-var24-abs').textContent = fmtEur(d24) + ' vs 2024';
+
+  let maxVal = 0, maxMes = 0;
+  data2026.forEach(function(v, i) { if (v > maxVal) { maxVal = v; maxMes = i; } });
+  if (el('kpi-melhor')) el('kpi-melhor').textContent = MESES[maxMes];
+  if (el('kpi-melhor-val')) el('kpi-melhor-val').textContent = fmtEur(maxVal);
+
+  // Gráfico acumulado 3 anos
+  if (chartMensal) chartMensal.destroy();
+  const ctxM = document.getElementById('chartMensal');
+  if (ctxM) {
+    chartMensal = new Chart(ctxM.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: MESES_ABREV,
+        datasets: [
+          { label: 'Acumulado 2026', data: acum2026, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.12)', fill: true, tension: .3, pointRadius: 4, borderWidth: 3 },
+          { label: 'Acumulado 2025', data: acum2025, borderColor: '#f97316', backgroundColor: 'transparent', borderDash: [6, 4], tension: .3, pointRadius: 3, borderWidth: 2 },
+          { label: 'Acumulado 2024', data: acum2024, borderColor: '#60a5fa', backgroundColor: 'transparent', borderDash: [2, 4], tension: .3, pointRadius: 3, borderWidth: 2 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#8ba894' } },
+          tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + fmtEur(c.raw); } } }
+        },
+        scales: {
+          x: { ticks: { color: '#8ba894' }, grid: { color: 'rgba(255,255,255,.04)' } },
+          y: { ticks: { color: '#8ba894', callback: function(v) { return (v / 1000) + 'k'; } }, grid: { color: 'rgba(255,255,255,.04)' } }
+        }
       }
-    }
-  });
+    });
+  }
 
-  const q=[
-    {label:'1º Trimestre (Jan-Mar)',i0:0,i1:2},
-    {label:'2º Trimestre (Abr-Jun)',i0:3,i1:5},
-    {label:'3º Trimestre (Jul-Set)',i0:6,i1:8},
-    {label:'4º Trimestre (Out-Dez)',i0:9,i1:11}
+  // Evolução anual (totais do ano completo)
+  const tot24 = (typeof data2024 !== 'undefined' ? data2024 : []).reduce(function(a, b) { return a + (b || 0); }, 0);
+  const tot25 = data2025.reduce(function(a, b) { return a + (b || 0); }, 0);
+  // 2026: só meses com dados para "parcial", mas no gráfico anual usamos soma dos meses disponíveis
+  const tot26 = data2026.reduce(function(a, b) { return a + (b || 0); }, 0);
+  const meses26 = data2026.filter(function(v) { return v > 0; }).length;
+
+  if (typeof chartAnual !== 'undefined' && chartAnual) chartAnual.destroy();
+  const ctxA = document.getElementById('chartAnual');
+  if (ctxA && typeof Chart !== 'undefined') {
+    window.chartAnual = new Chart(ctxA.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['2024', '2025', '2026' + (meses26 < 12 ? ' (YTD ' + meses26 + 'm)' : '')],
+        datasets: [{
+          label: 'Total líquido (€)',
+          data: [tot24, tot25, tot26],
+          backgroundColor: ['#60a5fa', '#f97316', '#22c55e'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(c) { return fmtEur(c.raw); } } }
+        },
+        scales: {
+          x: { ticks: { color: '#8ba894' }, grid: { display: false } },
+          y: { ticks: { color: '#8ba894', callback: function(v) { return (v / 1000000).toFixed(1) + 'M'; } }, grid: { color: 'rgba(255,255,255,.04)' } }
+        }
+      }
+    });
+  }
+  const ar = el('anualResumo');
+  if (ar) {
+    const v25_24 = tot24 ? ((tot25 - tot24) / tot24 * 100) : 0;
+    const v26_25 = tot25 && meses26 ? ((tot26 - a25) / a25 * 100) : 0; // vs mesmo período
+    ar.innerHTML =
+      '<span><strong style="color:#60a5fa">2024:</strong> ' + fmtEur(tot24) + ' (ano completo)</span>' +
+      '<span><strong style="color:#f97316">2025:</strong> ' + fmtEur(tot25) + ' (' + (v25_24 >= 0 ? '+' : '') + v25_24.toFixed(1) + '% vs 2024)</span>' +
+      '<span><strong style="color:#22c55e">2026 YTD:</strong> ' + fmtEur(tot26) + ' · mesmo período 2025: ' + fmtEur(a25) + ' (' + (p25 >= 0 ? '+' : '') + p25.toFixed(1) + '%)</span>';
+  }
+
+  // Trimestres
+  const quarters = [
+    { label: 'Q1', i0: 0, i1: 2 },
+    { label: 'Q2', i0: 3, i1: 5 },
+    { label: 'Q3', i0: 6, i1: 8 },
+    { label: 'Q4', i0: 9, i1: 11 }
   ];
-  document.getElementById('quarterCards').innerHTML=q.map(qi=>{
-    let s26=0,s25=0;
-    for(let i=qi.i0;i<=qi.i1;i++){ s26+=data2026[i]||0; s25+=data2025[i]||0; }
-    const vp=s25?((s26-s25)/s25*100):0;
-    return `<div class="q-card"><div class="q-label">${qi.label}</div><div class="q-value">${fmtEur(s26)}</div><div class="q-var ${vp>=0?'pos':'neg'}">${fmtPct(vp)} vs 2025</div></div>`;
-  }).join('');
+  const qEl = el('quarterCards');
+  if (qEl) {
+    qEl.innerHTML = quarters.map(function(qi) {
+      let s26 = 0, s25 = 0, s24 = 0;
+      for (let i = qi.i0; i <= qi.i1; i++) {
+        s26 += data2026[i] || 0;
+        s25 += data2025[i] || 0;
+        s24 += (typeof data2024 !== 'undefined' ? data2024[i] : 0) || 0;
+      }
+      const vp = s25 ? ((s26 - s25) / s25 * 100) : 0;
+      return '<div class="quarter-card">' +
+        '<div class="q-label">' + qi.label + '</div>' +
+        '<div class="q-val">' + fmtEur(s26) + '</div>' +
+        '<div class="q-sub">2025: ' + fmtEur(s25) + ' · 2024: ' + fmtEur(s24) + '</div>' +
+        '<div class="q-var ' + (vp >= 0 ? 'pos' : 'neg') + '">' + fmtPct(vp) + ' vs 2025</div>' +
+        '</div>';
+    }).join('');
+  }
 }
 
 function filterFamilia(cod) {
@@ -929,38 +1056,51 @@ function closeProductModal(){
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProductModal(); });
 
 function renderComparativos() {
-  if(chartComp) chartComp.destroy();
-  chartComp=new Chart(document.getElementById('chartComp').getContext('2d'),{
-    type:'bar',
-    data:{
-      labels:MESES_ABREV,
-      datasets:[
-        {label:'2026',data:data2026,backgroundColor:'rgba(34,197,94,.8)',borderRadius:4},
-        {label:'2025',data:data2025,backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}
+  if (chartComp) chartComp.destroy();
+  const d24 = typeof data2024 !== 'undefined' ? data2024 : new Array(12).fill(0);
+  chartComp = new Chart(document.getElementById('chartComp').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: MESES_ABREV,
+      datasets: [
+        { label: '2026', data: data2026, backgroundColor: 'rgba(34,197,94,.85)', borderRadius: 4 },
+        { label: '2025', data: data2025, backgroundColor: 'rgba(249,115,22,.75)', borderRadius: 4 },
+        { label: '2024', data: d24, backgroundColor: 'rgba(96,165,250,.75)', borderRadius: 4 }
       ]
     },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#8ba894'}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmtEur(c.raw)}}},
-      scales:{
-        x:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
-        y:{ticks:{color:'#8ba894',callback:v=>(v/1000)+'k'},grid:{color:'rgba(255,255,255,.04)'}}
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#8ba894' } },
+        tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + fmtEur(c.raw); } } }
+      },
+      scales: {
+        x: { ticks: { color: '#8ba894' }, grid: { color: 'rgba(255,255,255,.04)' } },
+        y: { ticks: { color: '#8ba894', callback: function(v) { return (v / 1000) + 'k'; } }, grid: { color: 'rgba(255,255,255,.04)' } }
       }
     }
   });
-  const acum2026=calcAcum(data2026), acum2025=calcAcum(data2025);
-  document.querySelector('#tableVar tbody').innerHTML=MESES.map((m,i)=>{
-    const v26=data2026[i]||0, v25=data2025[i]||0;
-    const d=v26-v25, p=v25?(d/v25*100):0;
-    const ap=acum2025[i]?((acum2026[i]-acum2025[i])/acum2025[i]*100):0;
-    return `<tr>
-      <td>${m}</td><td>${fmtEur(v26)}</td><td>${fmtEur(v25)}</td>
-      <td class="${d>=0?'pos':'neg'}">${fmtEur(d)}</td>
-      <td class="${p>=0?'pos':'neg'}">${fmtPct(p)}</td>
-      <td>${fmtEur(acum2026[i])}</td><td>${fmtEur(acum2025[i])}</td>
-      <td class="${ap>=0?'pos':'neg'}">${fmtPct(ap)}</td>
-    </tr>`;
-  }).join('');
+
+  const acum2026 = calcAcum(data2026);
+  const acum2025 = calcAcum(data2025);
+  const acum2024 = calcAcum(d24);
+  const tbody = document.querySelector('#tableVar tbody');
+  if (tbody) {
+    tbody.innerHTML = MESES.map(function(m, i) {
+      const v26 = data2026[i] || 0, v25 = data2025[i] || 0, v24 = d24[i] || 0;
+      const d1 = v26 - v25, p1 = v25 ? (d1 / v25 * 100) : 0;
+      const d2 = v26 - v24, p2 = v24 ? (d2 / v24 * 100) : 0;
+      return '<tr>' +
+        '<td>' + m + '</td>' +
+        '<td>' + fmtEur(v26) + '</td><td>' + fmtEur(v25) + '</td><td>' + fmtEur(v24) + '</td>' +
+        '<td class="' + (d1 >= 0 ? 'pos' : 'neg') + '">' + fmtEur(d1) + '</td>' +
+        '<td class="' + (p1 >= 0 ? 'pos' : 'neg') + '">' + fmtPct(p1) + '</td>' +
+        '<td class="' + (d2 >= 0 ? 'pos' : 'neg') + '">' + fmtEur(d2) + '</td>' +
+        '<td class="' + (p2 >= 0 ? 'pos' : 'neg') + '">' + fmtPct(p2) + '</td>' +
+        '<td>' + fmtEur(acum2026[i]) + '</td><td>' + fmtEur(acum2025[i]) + '</td><td>' + fmtEur(acum2024[i]) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
 }
 
 function renderLojas() {
@@ -1255,7 +1395,10 @@ function parseVendas(rows, year){
 
 (async function init() {
   const ok = await carregarDoSupabase();
+  if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
   renderVisao();
+  if (typeof renderTopsellers === 'function') renderTopsellers();
+  if (typeof renderComparativos === 'function') renderComparativos();
   if (ok) {
     console.log('Dashboard iniciado com dados do Supabase');
   }
