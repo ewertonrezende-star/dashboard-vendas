@@ -236,6 +236,31 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div id="familiaContagem" style="font-size:.85rem;color:var(--muted);margin-bottom:.5rem"></div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-bottom:.75rem">
+      <label style="font-size:.85rem;color:var(--muted)">Loja:</label>
+      <select id="lojaFilter" onchange="filterLoja(this.value)" style="padding:.35rem .6rem;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;min-width:140px">
+        <option value="ALL">Todas as lojas</option>
+        <option value="Sintra">Sintra</option>
+        <option value="Colares">Colares</option>
+        <option value="Albarraque">Albarraque</option>
+        <option value="Arneiro">Arneiro</option>
+        <option value="Mem Martins">Mem Martins</option>
+        <option value="Sabugo">Sabugo</option>
+      </select>
+      <label style="font-size:.85rem;color:var(--muted);margin-left:.5rem">Família:</label>
+      <select id="familiaSelect" onchange="filterFamilia(this.value)" style="padding:.35rem .6rem;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.85rem;min-width:180px">
+        <option value="ALL">Todas</option>
+        <option value="01">01 Cereais</option>
+        <option value="02">02 Rações</option>
+        <option value="03">03 Adubos</option>
+        <option value="04">04 Agroquímicos</option>
+        <option value="05">05 Sementes</option>
+        <option value="06">06 Máq. Ferramentas</option>
+        <option value="07">07 Alimentares</option>
+        <option value="08">08 Diversos</option>
+        <option value="09">09 Serviços</option>
+      </select>
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem" id="familiaFilters">
       <button class="btn btn-primary fam-btn active" data-fam="ALL" onclick="filterFamilia('ALL')">Todas</button>
       <button class="btn fam-btn" data-fam="01" onclick="filterFamilia('01')">01 Cereais</button>
@@ -408,7 +433,7 @@ async function carregarDoSupabase() {
     if (error) { console.warn('Supabase load:', error.message); return false; }
     if (!data) return false;
     if (Array.isArray(data.resumo_2026) && data.resumo_2026.length) data2026 = data.resumo_2026;
-    if (Array.isArray(data.resumo_2025) && data.resumo_2025.length) data2025 = data.resumo_2025;
+    /* 2024/2025 FIXOS — não sobrescrever */
     if (Array.isArray(data.produtos) && data.produtos.length) {
       produtos = data.produtos;
       reaplicarFamilias();
@@ -461,7 +486,82 @@ const FAMILIAS = {
 };
 
 /* Exceções: códigos cujo 1º dígito NÃO coincide com a família da auditoria */
-const FAMILIA_EXCECOES = {"81100010":"02","81100014":"02","81100023":"02","81100039":"02","81100041":"02","81100050":"02","81100083":"02","81100099":"02","81100114":"02","81100217":"02","81100221":"02","81100230":"02","81100236":"02","81100411":"02","81100429":"02","81100430":"02","81100438":"02","81100442":"02","81100444":"02","81100446":"02","81100471":"02","81100558":"02","81100713":"02","81100823":"02","81100824":"02","81100825":"02","81106516":"02","81107000":"02","81108050":"02","81108051":"02","81108053":"02","81108054":"02","81108055":"02","81109012":"02","81109013":"02","81109025":"02","81109031":"02","81109032":"02","81109035":"02","81109036":"02","81109037":"02","81109045":"02","81109047":"02","81109049":"02","81109058":"02","81109101":"02","81109105":"02","81109303":"02","81109326":"02","81154010":"02","81202119":"02","82121200":"02","82127010":"02","82134040":"02","82135010":"02","82135030":"02","82137010":"02","82161040":"02","82161200":"02","82164000":"02","82164040":"02","82165010":"02","82165030":"02","82167010":"02","82167020":"02","82600004":"02","83500002":"02","83500007":"02","83500009":"02","83500052":"02","81201011":"03","81201022":"03","81201079":"03","81201081":"03","81201083":"03","81201089":"03","81201101":"03","81201129":"03","81201139":"03","81201140":"03","81201141":"03","81201143":"03","81201145":"03","81201147":"03","81202011":"03","81202021":"03","81202024":"03","81202031":"03","81202115":"03","81202124":"03","81202125":"03","81202137":"03","81202143":"03","81203196":"03","83137065":"05","81201120":"06","82001600":"06","82001601":"06","82001602":"06","82001603":"06","82001604":"06","82001605":"06","82001606":"06","82001607":"06","82001608":"06","82001609":"06","82001610":"06","82001611":"06","82002521":"06","82300001":"06","82300002":"06","82300003":"06","82300004":"06","82300005":"06","82300006":"06","82300007":"06","82300008":"06","82300009":"06","82300010":"06","82300015":"06","82300016":"06","82300017":"06","82300021":"06","82300029":"06","81100237":"07","81100305":"07","81100501":"07","81106511":"07","81106512":"07","81109017":"07","81109050":"07","81109053":"07"};
+/* Gerado a partir de auditoria_completa_familias_coopsintra — 364 exceções */
+const FAMILIA_EXCECOES = {
+  "81100010":"02","81100014":"02","81100017":"02","81100018":"02","81100023":"02",
+  "81100029":"02","81100032":"02","81100039":"02","81100041":"02","81100042":"02",
+  "81100043":"02","81100044":"02","81100048":"02","81100050":"02","81100052":"02",
+  "81100066":"02","81100068":"02","81100070":"02","81100074":"02","81100083":"02",
+  "81100084":"02","81100086":"02","81100089":"02","81100094":"02","81100096":"02",
+  "81100099":"02","81100102":"02","81100103":"02","81100110":"02","81100112":"02",
+  "81100114":"02","81100117":"02","81100118":"02","81100121":"02","81100122":"02",
+  "81100123":"02","81100124":"02","81100127":"02","81100129":"02","81100131":"02",
+  "81100132":"02","81100133":"02","81100136":"02","81100144":"02","81100152":"02",
+  "81100160":"02","81100161":"02","81100164":"02","81100185":"02","81100186":"02",
+  "81100198":"02","81100199":"02","81100210":"02","81100211":"02","81100212":"02",
+  "81100213":"02","81100214":"02","81100215":"02","81100216":"02","81100217":"02",
+  "81100218":"02","81100219":"02","81100220":"02","81100221":"02","81100223":"02",
+  "81100224":"02","81100225":"02","81100226":"02","81100229":"02","81100230":"02",
+  "81100233":"02","81100235":"02","81100236":"02","81100237":"07","81100243":"02",
+  "81100244":"02","81100245":"02","81100247":"02","81100248":"02","81100283":"02",
+  "81100293":"02","81100299":"02","81100305":"07","81100307":"02","81100308":"02",
+  "81100310":"02","81100320":"02","81100326":"02","81100333":"02","81100372":"02",
+  "81100406":"02","81100411":"02","81100415":"02","81100417":"02","81100426":"02",
+  "81100429":"02","81100430":"02","81100431":"02","81100432":"02","81100433":"02",
+  "81100434":"02","81100438":"02","81100439":"02","81100441":"02","81100442":"02",
+  "81100444":"02","81100445":"02","81100446":"02","81100447":"02","81100471":"02",
+  "81100480":"02","81100481":"02","81100482":"02","81100483":"02","81100501":"07",
+  "81100519":"02","81100538":"02","81100555":"02","81100558":"02","81100560":"02",
+  "81100600":"02","81100601":"02","81100602":"02","81100603":"02","81100710":"02",
+  "81100711":"02","81100713":"02","81100714":"02","81100715":"02","81100803":"02",
+  "81100816":"02","81100820":"02","81100821":"02","81100822":"02","81100823":"02",
+  "81100824":"02","81100825":"02","81101002":"02","81101005":"02","81101009":"02",
+  "81101010":"02","81101012":"02","81101013":"02","81101014":"02","81101015":"02",
+  "81101016":"02","81101018":"02","81101019":"02","81101021":"02","81101022":"02",
+  "81101023":"02","81101030":"02","81101033":"02","81101042":"02","81101043":"02",
+  "81101044":"02","81101046":"02","81101047":"02","81101048":"02","81101049":"02",
+  "81101051":"02","81101052":"02","81101053":"02","81101054":"02","81101055":"02",
+  "81101056":"02","81101067":"02","81101481":"02","81101482":"02","81101483":"02",
+  "81102015":"02","81102113":"02","81102114":"02","81102606":"02","81103800":"02",
+  "81103809":"02","81103812":"02","81103823":"02","81104011":"02","81104020":"02",
+  "81104021":"02","81104022":"02","81106511":"07","81106512":"07","81106516":"02",
+  "81107000":"02","81108050":"02","81108051":"02","81108053":"02","81108054":"02",
+  "81108055":"02","81109001":"02","81109002":"02","81109003":"02","81109004":"02",
+  "81109005":"02","81109006":"02","81109007":"02","81109008":"02","81109009":"02",
+  "81109010":"02","81109011":"02","81109012":"02","81109013":"02","81109014":"02",
+  "81109015":"02","81109017":"07","81109019":"02","81109020":"02","81109021":"02",
+  "81109024":"02","81109025":"02","81109026":"02","81109027":"02","81109028":"02",
+  "81109029":"02","81109030":"02","81109031":"02","81109032":"02","81109033":"02",
+  "81109034":"02","81109035":"02","81109036":"02","81109037":"02","81109038":"02",
+  "81109039":"02","81109042":"02","81109043":"02","81109045":"02","81109047":"02",
+  "81109048":"02","81109049":"02","81109050":"07","81109053":"07","81109058":"02",
+  "81109059":"02","81109060":"02","81109061":"02","81109062":"02","81109063":"02",
+  "81109064":"02","81109065":"02","81109101":"02","81109105":"02","81109300":"02",
+  "81109301":"02","81109302":"02","81109303":"02","81109310":"02","81109311":"02",
+  "81109320":"02","81109321":"02","81109325":"02","81109326":"02","81109500":"02",
+  "81109501":"02","81154010":"02","81201011":"03","81201022":"03","81201079":"03",
+  "81201081":"03","81201083":"03","81201089":"03","81201101":"03","81201120":"06",
+  "81201129":"03","81201139":"03","81201140":"03","81201141":"03","81201143":"03",
+  "81201145":"03","81201147":"03","81202011":"03","81202021":"03","81202024":"03",
+  "81202031":"03","81202115":"03","81202119":"02","81202124":"03","81202125":"03",
+  "81202137":"03","81202143":"03","81203196":"03","82001600":"06","82001601":"06",
+  "82001602":"06","82001603":"06","82001604":"06","82001605":"06","82001606":"06",
+  "82001607":"06","82001608":"06","82001609":"06","82001610":"06","82001611":"06",
+  "82002521":"06","82121020":"02","82121030":"02","82121200":"02","82121210":"02",
+  "82127010":"02","82131010":"02","82131020":"02","82134040":"02","82135010":"02",
+  "82135030":"02","82137010":"02","82161020":"02","82161030":"02","82161040":"02",
+  "82161200":"02","82161210":"02","82164000":"02","82164040":"02","82165010":"02",
+  "82165030":"02","82167010":"02","82167020":"02","82300001":"06","82300002":"06",
+  "82300003":"06","82300004":"06","82300005":"06","82300006":"06","82300007":"06",
+  "82300008":"06","82300009":"06","82300010":"06","82300015":"06","82300016":"06",
+  "82300017":"06","82300021":"06","82300029":"06","82600004":"02","83137065":"05",
+  "83500001":"02","83500002":"02","83500003":"02","83500004":"02","83500005":"02",
+  "83500006":"02","83500007":"02","83500008":"02","83500009":"02","83500050":"02",
+  "83500051":"02","83500052":"02","83600001":"02","83600002":"02","83600003":"02",
+  "83600004":"02","83600005":"02","83600006":"02","83600007":"02","83600008":"02",
+  "83600009":"02","83600010":"02","83600011":"02","83600012":"02","86000001":"09",
+  "86000002":"09","86000003":"09","86000004":"09","86000005":"09"
+};
 
 /* Fallback por nome (artigos da auditoria com exceção) */
 const FAMILIA_EXCECOES_NOME = {"raçao p/cavalos mant esmag 30kg (galrao)":"02","providog essencial mix adulto 18kg vaca e arroz":"02","mistura p/coelhos anoes 5kg (galrao)":"02","granulado peixe agua fria 5kg (galrao)":"02","raçao p/cavalos trab esmag 40kg (galrao)":"02","providog seleçao borrego e arroz 15kg":"02","mistura p/coelhos anoes 500gr (galrao)":"02","raçao p/cavalo simples manut 30kg (galrao)":"02","lote cereais frangos 5kg":"02","mistura p/coelhos anoes sacos 25kg (galrao)":"02","mistura p/pintos saco 25kg (galrao)":"02","massa p/animais saco de 5kg diaco":"02","mistura p/pintos 5kg (galrao)":"02","friskies gato atum & verduras 2 kg 12219345":"02","mistura p/frangos belguita reprod 25kg (galrao)":"02","mistura p/frangos belguita 25kg (galrao)":"02","raçao simples p/coelho 30kg":"02","raçao simples p/coelho 5kg galrao":"02","mistura p/frangos belguita 20kg (galrao)":"02","mistura p/frangos  reprod 20kg (galrao)":"02","raçao simples de ovinos 30kg galrao":"02","massa p/animais saco de 5kg (galrao)":"02","aliment compl pintos/patos/perus 5kg camperstarter":"02","avenal dog salmao e arroz 15kg":"02","avenal dog frango e arroz 15kg":"02","avenal dog borrego e arroz 15kg":"02","coleira p/gatos sortida 17550":"02","alimento completo cão adulto 5kg \"agrisintra\"":"02","mistura para aves (nature aves) 5 kg cargill":"02","mistura para aves (nature aves) 30kg cargill":"02","mistura para coelhos (natura coelhos) 5kg cargill":"02","mistura para aves (nature aves) 25kg cargill":"02","mistura para coelhos (natura coelhos) 25kg cargill":"02","lote cereais pintos 5kg (ribeiros)":"02","lote cereais pintos 25kg (ribeiros)":"02","mistura cereais coelhos 25kg (ribeiros)":"02","mistura cereais corrente 5kg (ribeiros)":"02","mistura cereais corrente 25kg (ribeiros)":"02","mistura cereais coelhos 5kg (ribeiros)":"02","mistura cereais p/ovinos 30kg (ribeiros)":"02","mistura cereais p/ovinos 25kg (ribeiros)":"02","massa p/caes 3kg (ribeiros)":"02","massa p/caes 5kg (ribeiros)":"02","massa p/caes 2,5kg (ribeiros)":"02","mistura cereais p/cavalos 25kg (ribeiros)":"02","mistura p/cavalos ribmix saco 30kg (ribeiros)":"02","mistura p/cavalos ribmix saco 25kg (ribeiros)":"02","teycat tuna (atum) 415gr":"02","petcool gato atum 405gr":"02","ração granulado equidios 401 (galrao)":"02","bloc cães + gatos gran. 900 gr. 4732":"02","avidiaco galinhas 5kg mistura galinhas poedeiras":"02","lapidiaco unico (alim nat coelhos) 5kg":"02","alimento natural p/cavalos 25kg":"02","ovidiaco manutençao (ovinos/capr) 25kg":"02","alimento natural p/ovinos e caprinos 25kg":"02","lapidiaco unico (alim nat coelhos) 25kg":"02","lote cereais corrente 20kg para aves":"02","avidiaco galinhas 20kg mistura galinhas poedeiras":"02","equidiaco manutençao (cavalos) 20kg":"02","equidiaco extra 20kg p/cavalos sujeitos a trab reg":"02","ovidiaco manutençao (ovinos/capr) 20kg":"02","alimento natural p/ovinos e caprinos 30kg":"02","lapidiaco unico (alim nat. coelhos) 20kg":"02","alimento natural p/coelhos 20kg":"02","fardo palha de trigo (galrao)":"02","pro plan esterilizado gato salmao e atum 85gr":"02","gourmet gold gato atum e peixe 85gr":"02","gourmet nature gato lascas de atum c/gambas 70gr":"02","purina one cao mini c/frango arroz e tomate 85gr":"02","adubo hortensias azaleas acido 1kg 4856":"03","adubo liquido geranios 1150gr 4863":"03","adubo universal 1 kg  4672":"03","adubo plantas tropicais 1kg 4676":"03","adubo biologico 5kg 4680 acros":"03","adubo biológico morangos 1000 gr. 4714":"03","adubo energia amarela-citrinos 1 kg 4752":"03","adubo biológico horto 1000 gr. 4712":"03","adubo energia citrinos - 1200 gr. 4682":"03","adubo oliveiras 1000gr 4711":"03","adubo liquido bonsai 570gr 4861":"03","adubo liquido plantas verdes 1150gr 4871":"03","adubo biologico liq universal 780ml 4649":"03","substrato para bonsais 5lt 4686":"03","adubo liq.enraizamento 500 ml 4632/4878":"03","substrato para orquideas-5 lt 4641":"03","adubo especial orquideas 300gr 4613":"03","adubo especial rosas 1 kg 4611 granul.":"03","adubo liq. p/ cactos - 500 ml 4635 570 g. 4870":"03","adubo liquido universal 1150 g. 4865":"03","adubo liquido orquideas 570 g. 4866":"03","adubo liquido universal 570 g. 4864 ( acros )":"03","adubo liquido petunias 1150 gr 4868":"03","adubo eliminador de musgo 1kg 4650 4855":"03","uso sementes hort. jardinagem":"05","pá para cinza 005.6050 (antónio mateus)":"06","prego setia 12 2500022":"06","prego 1/2 galeota 11 2500024":"06","prego galeota 10 2500026":"06","prego cavilha 5 2500032":"06","prego cavilha 6 2500034":"06","prego cavilha 7 2500036":"06","prego fasquia 4x14 2500016":"06","prego telhado 8 2500030":"06","prego cavilha 8 2500038":"06","prego 1/2 telhado 9 2500028":"06","prego fasquia 4x15 2500014":"06","prego fasquia 3x15 2500012":"06","cj abraçadeira atar plantas 20 pçs 31550":"06","pulverizador np-04-15a 4,5m 512664 bzw":"06","pulverizador np-04-12a 3,7m 512663 bzw":"06","bico pulverizador kvf 8a 2,4m 512816 bzw":"06","bico pulverizador kvf 10a 3,0m 512667 bzw":"06","bico pulverizador kvf 12a 3,7m 512668 bzw":"06","bico pulverizador kvf 15a 4,5m 512669 bzw":"06","bico pulverizador kvf 17a 5,2m 512670 bzw":"06","aspersor pro 1/2\" 512672 bzw":"06","aspersor rps 3/4\" 512673 bzw":"06","aspersor rps select 3/4\" 512817 bzw":"06","gotejador ac desmontável 2l/h 509099 bzw":"06","gotejador ac desmontável 4l/h 509097 bzw":"06","gotejador ac desmontável 8l/h 509098 bzw":"06","corpo pulverizador pro-s4 bzw":"06","pulverizador np-04-17a bzw 512665":"06","trinca de arroz 5kg (galrao)":"07","trinca de arroz 25kg (galrao)":"07","trinca de arroz 5kg (diaco)":"07","barrita mel p/pistacideos 150gr a5010":"07","barrita mel p/periquitos 60gr a5009":"07","trinca de arroz 5kg (ribeiros)":"07","trinca de arroz 30kg (ribeiros)":"07","trinca de arroz 25kg (ribeiros)":"07"};
@@ -517,14 +617,19 @@ function limparNome(nome) {
 }
 
 const SERVICO_KEYWORDS = [
-  'energia','cedência','reemb','reembolso','candidatura','parcelario',
-  'serv','serviço','servicos','manut','manutenção','gabinete',
-  'reparação','reparacao','reparaçao','aluguer','pedido de 2ª',
-  '2ª via','cartao','cartão','apf','cabimento','compromisso',
+  'energia','cedência','cedencia','reemb','reembolso','candidatura','parcelario',
+  'serv','serviço','servico','servicos','manut','manutenção','manutencao','gabinete',
+  'reparação','reparacao','reparaçao','aluguer','pedido de 2ª','pedido de 2a',
+  '2ª via','2a via','cartao','cartão','apf','cabimento','compromisso',
   'encomenda','processo','referente','requisição','requisicao',
   'serie','n.º de serie','validade','local de entrega','nota de encomenda',
-  'maquinas em repara','limpeza de carburador','renda da loja','portes'
+  'maquinas em repara','limpeza de carburador','renda da loja','portes',
+  'gasóleo','gasoleo','combustível','combustivel'
 ];
+const CODIGOS_EXCLUIR_TOP = new Set([
+  '00000733','00000763','00000777','00000888','00000889',
+  '86000001','86000002','86000003','86000004','86000005'
+]);
 
 function isServico(nome) {
   if (!nome) return false;
@@ -558,6 +663,10 @@ function reaplicarFamilias() {
 
 
 const LOJAS = ['Sintra','Colares','Albarraque','Arneiro','Mem Martins','Sabugo'];
+const LOJA_CODIGO = {
+  '000': 'Sintra', '001': 'Colares', '002': 'Albarraque',
+  '003': 'Arneiro', '007': 'Mem Martins', '008': 'Sabugo'
+};
 const matriz_2025 = {
   'Albarraque':[44062.75,45737.77,45483.52,51777.78,52276.39,41329.79,44633.53,38681.04,43970.58,48335.56,39415.23,42161.81],
   'Arneiro':[27185.78,23099.66,28372.47,31562.45,37243.32,28006.09,29151.13,23319.21,26745.09,31000.08,25281.54,28320.49],
@@ -575,8 +684,9 @@ const matriz_2026 = {
   'Sintra':[77698.99,102835.8,142136.69,118402.51,140007.34,105999.6,97411.7,83120.94,98761.48,25692.94,0,0]
 };
 
-let data2026 = [232500.37,257247.96,373096.63,342544.19,345154.60,281880.17,277305.50,240554.22,272846.75,248150.32,0,0];
-let data2025 = [192072.72,200566.82,203433.09,245827.13,279784.17,218484.57,222188.39,186806.05,219503.53,232494.33,192298.51,187378.35];
+let data2026 = [232500.37, 257247.96, 373096.63, 342544.19, 345154.6, 281880.17, 277305.5, 240554.22, 272846.75, 274049.34, 0, 0];
+const data2025 = [229184.25, 240978.37, 260704.33, 297576.15, 370225.69, 289327.14, 291348.89, 228137.83, 285606.96, 321244.18, 240515.17, 242156.92]; // FIXO
+const data2024 = [253727.71, 252831.51, 269032.24, 321755.64, 316221.46, 257778.8, 285967.79, 238739.07, 235488.95, 273663.28, 260646.09, 233148.81]; // FIXO
 
 let produtos = [
   { nome:'Farinha de Milho 25kg', codigo:'10100006', familia:'01', qtd2026:1, val2026:9.9, qtd2025:0, val2025:0, mensal2026:[0,0,0,0,0,1,0,0,0,0,0,0], mensal2025:Array(12).fill(0) },
@@ -588,6 +698,7 @@ let produtos = [
 ];
 
 let familiaAtual = 'ALL';
+let lojaAtual = 'ALL';
 let chartMensal=null, chartProduto=null, chartComp=null, chartFamilias=null, chartLojas=null, chartLojaMes=null;
 
 const fmtEur = v => new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v||0);
@@ -669,63 +780,114 @@ function renderVisao() {
 }
 
 function filterFamilia(cod) {
-  familiaAtual=cod;
-  document.querySelectorAll('.fam-btn').forEach(b=>{
-    b.classList.toggle('active',b.dataset.fam===cod);
-    b.classList.toggle('btn-primary',b.dataset.fam===cod);
+  familiaAtual = cod;
+  document.querySelectorAll('.fam-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.fam === cod);
+    b.classList.toggle('btn-primary', b.dataset.fam === cod);
   });
+  const sel = document.getElementById('familiaSelect');
+  if (sel) sel.value = cod;
   renderTopsellers();
+}
+function filterLoja(loja) {
+  lojaAtual = loja || 'ALL';
+  renderTopsellers();
+}
+function excluirDoTop(p) {
+  if (!p) return true;
+  const cod = String(p.codigo || '').trim();
+  if (typeof CODIGOS_EXCLUIR_TOP !== 'undefined' && CODIGOS_EXCLUIR_TOP.has(cod)) return true;
+  if (typeof isServico === 'function' && isServico(p.nome)) return true;
+  const fam = p.familia || (typeof getFamilia === 'function' ? getFamilia(p) : '');
+  if (fam === '09') return true;
+  return false;
 }
 
 function renderTopsellers() {
-  reaplicarFamilias();
-  let lista=produtos.map(p=>({...p,familia:getFamilia(p),nome:limparNome(p.nome)||p.nome}));
-  if(familiaAtual!=='ALL') lista=lista.filter(p=>p.familia===familiaAtual);
-  const contadorEl=document.getElementById('familiaContagem');
-  if(contadorEl){
-    const nomeFam=familiaAtual==='ALL'?'Todas':(FAMILIAS[familiaAtual]||familiaAtual);
-    contadorEl.textContent=lista.length+' artigo(s) · '+nomeFam;
+  if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
+  let lista = (produtos || []).map(p => {
+    const fam = typeof getFamilia === 'function' ? getFamilia(p) : (p.familia || '08');
+    const nome = (typeof limparNome === 'function' ? limparNome(p.nome) : p.nome) || p.nome;
+    let val = p.val2026 || 0;
+    let qtd = p.qtd2026 || 0;
+    if (lojaAtual !== 'ALL' && p.porLoja && p.porLoja[lojaAtual]) {
+      val = p.porLoja[lojaAtual].val || 0;
+      qtd = p.porLoja[lojaAtual].qtd || 0;
+    } else if (lojaAtual !== 'ALL') {
+      val = 0; qtd = 0;
+    }
+    return Object.assign({}, p, { familia: fam, nome: nome, val2026: val, qtd2026: qtd });
+  });
+  if (familiaAtual !== 'ALL') lista = lista.filter(p => p.familia === familiaAtual);
+  const listaRank = lista.filter(p => !excluirDoTop(p) && (p.val2026 > 0 || p.qtd2026 > 0));
+
+  const contadorEl = document.getElementById('familiaContagem');
+  if (contadorEl) {
+    const nomeFam = familiaAtual === 'ALL' ? 'Todas' : ((FAMILIAS && FAMILIAS[familiaAtual]) || familiaAtual);
+    const nomeLoja = lojaAtual === 'ALL' ? 'Todas lojas' : lojaAtual;
+    contadorEl.textContent = listaRank.length + ' artigo(s) · ' + nomeFam + ' · ' + nomeLoja;
   }
 
-  const byVal=[...lista].sort((a,b)=>b.val2026-a.val2026).slice(0,40);
-  const byVol=[...lista].sort((a,b)=>b.qtd2026-a.qtd2026).slice(0,40);
-  const maxV=byVal[0]?.val2026||1;
-  const maxQ=byVol[0]?.qtd2026||1;
+  const byVal = listaRank.slice().sort((a,b) => b.val2026 - a.val2026).slice(0, 15);
+  const byVol = listaRank.slice().sort((a,b) => b.qtd2026 - a.qtd2026).slice(0, 15);
+  const maxV = (byVal[0] && byVal[0].val2026) || 1;
+  const maxQ = (byVol[0] && byVol[0].qtd2026) || 1;
 
-  const item=(p,i,isVal)=>`
-    <li class="rank-item" onclick="selectProduct('${String(p.nome).replace(/'/g,"\\'")}')">
-      <div class="rank-num">${i+1}</div>
-      <div class="rank-info">
-        <div class="rank-name">${p.nome}</div>
-        <div class="rank-meta">${FAMILIAS[p.familia]||p.familia} · ${isVal?fmtEur(p.val2026):p.qtd2026.toLocaleString('pt-PT')+' un'}</div>
-        <div class="rank-bar"><div class="rank-bar-fill" style="width:${((isVal?p.val2026:p.qtd2026)/(isVal?maxV:maxQ)*100).toFixed(0)}%"></div></div>
-      </div>
-      <div class="rank-value">${isVal?p.qtd2026.toLocaleString('pt-PT')+' un':fmtEur(p.val2026)}</div>
-    </li>`;
+  function item(p, i, isVal) {
+    const meta = ((FAMILIAS && FAMILIAS[p.familia]) || p.familia) + ' · ' +
+      (isVal ? (typeof fmtEur === 'function' ? fmtEur(p.val2026) : p.val2026) : (p.qtd2026.toLocaleString('pt-PT') + ' un'));
+    const pct = Math.min(100, ((isVal ? p.val2026 / maxV : p.qtd2026 / maxQ) * 100));
+    const safeName = String(p.nome || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<li class="rank-item" onclick="selectProduct(\'' + safeName + '\')">' +
+      '<span class="rank-num">' + (i+1) + '</span>' +
+      '<div class="rank-body">' +
+      '<div class="rank-name">' + (p.nome || '') + '</div>' +
+      '<div class="rank-meta">' + meta + '</div>' +
+      '<div class="rank-bar"><div class="rank-bar-fill" style="width:' + pct + '%"></div></div>' +
+      '</div></li>';
+  }
 
-  document.getElementById('rankValor').innerHTML=byVal.length?byVal.map((p,i)=>item(p,i,true)).join(''):'<li style="padding:1rem;color:var(--muted)">Nenhum produto</li>';
-  document.getElementById('rankVolume').innerHTML=byVol.length?byVol.map((p,i)=>item(p,i,false)).join(''):'<li style="padding:1rem;color:var(--muted)">Nenhum produto</li>';
+  const listVal = document.getElementById('rankValor');
+  const listQtd = document.getElementById('rankVolume');
+  const empty = '<li class="rank-item"><div class="rank-body">Sem dados para este filtro</div></li>';
+  if (listVal) listVal.innerHTML = byVal.length ? byVal.map(function(p,i){ return item(p,i,true); }).join('') : empty;
+  if (listQtd) listQtd.innerHTML = byVol.length ? byVol.map(function(p,i){ return item(p,i,false); }).join('') : empty;
 
-  // Pizza por família
-  const totais={};
-  Object.keys(FAMILIAS).forEach(k=>totais[k]=0);
-  produtos.forEach(p=>{ const f=getFamilia(p); totais[f]=(totais[f]||0)+(p.val2026||0); });
-  const labels=Object.keys(FAMILIAS).map(k=>k+' · '+FAMILIAS[k]);
-  const values=Object.keys(FAMILIAS).map(k=>totais[k]||0);
-  const cores=['#22c55e','#a3e635','#eab308','#f97316','#3b82f6','#8b5cf6','#ec4899','#64748b','#94a3b8'];
-
-  if(chartFamilias) chartFamilias.destroy();
-  chartFamilias=new Chart(document.getElementById('chartFamilias').getContext('2d'),{
-    type:'doughnut',
-    data:{labels,datasets:[{data:values,backgroundColor:cores,borderWidth:0}]},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{position:'right',labels:{color:'#8ba894',boxWidth:12,font:{size:11}}},
-        tooltip:{callbacks:{label:c=>c.label+': '+fmtEur(c.raw)}}
-      }
-    }
+  // Pizza famílias
+  const totais = {};
+  if (FAMILIAS) Object.keys(FAMILIAS).forEach(k => totais[k] = 0);
+  (produtos || []).forEach(p => {
+    if (excluirDoTop(p)) return;
+    const f = typeof getFamilia === 'function' ? getFamilia(p) : (p.familia || '08');
+    let v = p.val2026 || 0;
+    if (lojaAtual !== 'ALL' && p.porLoja && p.porLoja[lojaAtual]) v = p.porLoja[lojaAtual].val || 0;
+    else if (lojaAtual !== 'ALL') v = 0;
+    totais[f] = (totais[f] || 0) + v;
   });
+  const labels = FAMILIAS ? Object.keys(FAMILIAS).map(k => k + ' · ' + FAMILIAS[k]) : [];
+  const values = FAMILIAS ? Object.keys(FAMILIAS).map(k => totais[k] || 0) : [];
+  const canvas = document.getElementById('chartFamilias');
+  if (canvas && typeof Chart !== 'undefined') {
+    if (typeof chartFamilias !== 'undefined' && chartFamilias) chartFamilias.destroy();
+    chartFamilias = new Chart(canvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: ['#3b82f6','#22c55e','#eab308','#ef4444','#a855f7','#f97316','#14b8a6','#64748b','#ec4899'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 }, color: '#94a3b8' } },
+          tooltip: { callbacks: { label: function(c) { return c.label + ': ' + (typeof fmtEur === 'function' ? fmtEur(c.raw) : c.raw); } } }
+        }
+      }
+    });
+  }
 }
 
 function selectProduct(nome) {
@@ -916,45 +1078,52 @@ if(dropZone&&fileInput){
 }
 
 function handleFiles(files){
-  Array.from(files).forEach(f=>{
-    const name=f.name.toLowerCase();
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      try{
-        const data=new Uint8Array(ev.target.result);
-        const wb=XLSX.read(data,{type:'array'});
-        const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
-        if(name.includes('resumo')){
-          parseResumo(json);
-          document.getElementById('chip-resumo').className='file-chip ok';
-          document.getElementById('chip-resumo').textContent='Resumo: ✓ '+f.name;
-        } else if(name.includes('2026')){
-          parseVendas(json,2026);
-          document.getElementById('chip-2026').className='file-chip ok';
-          document.getElementById('chip-2026').textContent='Vendas 2026: ✓ '+f.name;
-        } else if(name.includes('2025')){
-          parseVendas(json,2025);
-          document.getElementById('chip-2025').className='file-chip ok';
-          document.getElementById('chip-2025').textContent='Vendas 2025: ✓ '+f.name;
-        } else if(json[0]&&String(json[0][0]).toLowerCase().includes('mês')){
-          parseResumo(json);
-          document.getElementById('chip-resumo').className='file-chip ok';
-          document.getElementById('chip-resumo').textContent='Resumo: ✓ '+f.name;
-        } else {
-          alert('Ficheiro não reconhecido. Use nomes com "resumo", "2026" ou "2025".');
-        }
-        renderVisao();
-        renderTopsellers();
-        renderComparativos();
-        gravarNoSupabase().then(ok => {
-          if (ok) {
-            const tip = document.getElementById('supabaseStatus');
-            if (tip) tip.textContent = '✓ Guardado no Supabase — visível para todos';
-          }
+  Array.from(files).forEach(function(f){
+    const name = f.name.toLowerCase();
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        const data = new Uint8Array(ev.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        let json = [];
+        wb.SheetNames.forEach(function(sn) {
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+          json = json.concat(rows);
         });
-      }catch(err){
+        const hasArtigo = json.some(function(r){ return r && String(r[0]||'').toLowerCase().indexOf('artigo') === 0; });
+        const hasTotalLiq = json.some(function(r){ return r && String(r[0]||'').toLowerCase().indexOf('total liq') >= 0; });
+        const isDetalhada = hasArtigo || name.indexOf('detalh') >= 0;
+        const isResumo = !isDetalhada && (name.indexOf('resumo') >= 0 || hasTotalLiq || (name.indexOf('vendas') >= 0 && name.indexOf('2026') >= 0 && !hasArtigo));
+
+        if (isResumo) {
+          parseResumo(json);
+          var chip = document.getElementById('chip-resumo');
+          if (chip) { chip.className = 'file-chip ok'; chip.textContent = 'Resumo: ✓ ' + f.name; }
+        } else if (isDetalhada || name.indexOf('2026') >= 0) {
+          parseVendas(json, 2026);
+          var chip2 = document.getElementById('chip-2026');
+          if (chip2) { chip2.className = 'file-chip ok'; chip2.textContent = 'Vendas 2026: ✓ ' + f.name; }
+        } else if (name.indexOf('2025') >= 0) {
+          parseVendas(json, 2025);
+          var chip3 = document.getElementById('chip-2025');
+          if (chip3) { chip3.className = 'file-chip ok'; chip3.textContent = 'Vendas 2025: ✓ ' + f.name; }
+        } else {
+          alert('Ficheiro não reconhecido. Use resumo 2026 ou vendas detalhadas 2026.');
+        }
+        if (typeof renderVisao === 'function') renderVisao();
+        if (typeof renderTopsellers === 'function') renderTopsellers();
+        if (typeof renderComparativos === 'function') renderComparativos();
+        if (typeof gravarNoSupabase === 'function') {
+          gravarNoSupabase().then(function(ok) {
+            if (ok) {
+              var tip = document.getElementById('supabaseStatus');
+              if (tip) tip.textContent = '✓ Guardado no Supabase — visível para todos';
+            }
+          });
+        }
+      } catch (err) {
         console.error(err);
-        alert('Erro ao ler ficheiro: '+err.message);
+        alert('Erro ao ler ficheiro: ' + err.message);
       }
     };
     reader.readAsArrayBuffer(f);
@@ -962,68 +1131,125 @@ function handleFiles(files){
 }
 
 function parseResumo(rows){
-  const new26=new Array(12).fill(0), new25=new Array(12).fill(0);
-  rows.forEach(r=>{
-    const mesStr=String(r[0]||'').toLowerCase();
-    const idx=MESES.findIndex(m=>mesStr.includes(m.toLowerCase().slice(0,3)));
-    if(idx>=0){
-      const n=(x)=>parseFloat(String(x).replace(/[^\d.,-]/g,'').replace(',','.'))||0;
-      new26[idx]=n(r[1]);
-      new25[idx]=n(r[3]);
+  const new26 = new Array(12).fill(0);
+  const n = function(x) {
+    return parseFloat(String(x == null ? '' : x).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  };
+  (rows || []).forEach(function(r) {
+    const mesStr = String(r[1] || r[0] || '').toLowerCase();
+    const idx = MESES.findIndex(function(m){ return mesStr.indexOf(m.toLowerCase().slice(0,3)) >= 0; });
+    if (idx >= 0) {
+      const val = n(r[2] !== undefined && r[2] !== '' ? r[2] : r[1]);
+      if (val > 0) new26[idx] = val;
     }
   });
-  if(new26.some(v=>v>0)) data2026=new26;
-  if(new25.some(v=>v>0)) data2025=new25;
+  if (new26.some(function(v){ return v > 0; })) {
+    data2026 = new26;
+  }
 }
 
 function parseVendas(rows, year){
-  const map={};
-  let currentArtigo=null, currentNome='';
-  rows.forEach(r=>{
-    const c0=String(r[0]||'').trim();
-    const c1=String(r[1]||'').trim();
-    if(c0==='Artigo:'||c0.toLowerCase().startsWith('artigo')){
-      currentArtigo=c1;
-      currentNome=limparNome(String(r[2]||c1).trim()||c1);
-      if(!map[currentArtigo]) map[currentArtigo]={nome:currentNome,codigo:currentArtigo,qtd:0,val:0,mensal:new Array(12).fill(0)};
+  const map = {};
+  let currentArtigo = null, currentNome = '', currentLoja = null;
+  const n = function(x) {
+    return parseFloat(String(x == null ? '' : x).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  };
+
+  rows.forEach(function(r) {
+    if (!r || !r.length) return;
+    const c0 = String(r[0] == null ? '' : r[0]).trim();
+    const c1 = String(r[1] == null ? '' : r[1]).trim();
+
+    if (c0 === 'Artigo:' || c0.toLowerCase().indexOf('artigo') === 0) {
+      currentArtigo = c1;
+      currentNome = (typeof limparNome === 'function' ? limparNome(String(r[2] || c1).trim()) : String(r[2] || c1).trim()) || c1;
+      currentLoja = null;
+      if (!map[currentArtigo]) {
+        map[currentArtigo] = {
+          nome: currentNome, codigo: currentArtigo,
+          qtd: 0, val: 0, mensal: new Array(12).fill(0),
+          porLoja: {}
+        };
+      }
+      return;
     }
-    if(c0.toLowerCase().startsWith('total')&&MESES.some(m=>c1.toLowerCase().includes(m.toLowerCase().slice(0,3)))){
-      const mesIdx=MESES.findIndex(m=>c1.toLowerCase().includes(m.toLowerCase().slice(0,3)));
-      if(mesIdx>=0&&currentArtigo&&map[currentArtigo]){
-        const n=(x)=>parseFloat(String(x).replace(/[^\d.,-]/g,'').replace(',','.'))||0;
-        const qtd=n(r[2]||r[1]);
-        const val=n(r[5]||r[4]);
-        map[currentArtigo].mensal[mesIdx]+=val;
-        map[currentArtigo].val+=val;
-        map[currentArtigo].qtd+=qtd;
+
+    if (typeof LOJA_CODIGO !== 'undefined' && LOJA_CODIGO[c0]) {
+      currentLoja = LOJA_CODIGO[c0];
+      if (currentArtigo && map[currentArtigo] && !map[currentArtigo].porLoja[currentLoja]) {
+        map[currentArtigo].porLoja[currentLoja] = { qtd: 0, val: 0, mensal: new Array(12).fill(0) };
+      }
+      return;
+    }
+
+    if (c0.toLowerCase().indexOf('total') === 0 && typeof MESES !== 'undefined' &&
+        MESES.some(function(m){ return c1.toLowerCase().indexOf(m.toLowerCase().slice(0,3)) >= 0; })) {
+      const mesIdx = MESES.findIndex(function(m){ return c1.toLowerCase().indexOf(m.toLowerCase().slice(0,3)) >= 0; });
+      if (mesIdx >= 0 && currentArtigo && map[currentArtigo]) {
+        const qtd = n(r[2] || r[1]);
+        const val = n(r[5] !== undefined && r[5] !== '' ? r[5] : r[4]);
+        map[currentArtigo].mensal[mesIdx] += val;
+        map[currentArtigo].val += val;
+        map[currentArtigo].qtd += qtd;
+        if (currentLoja) {
+          if (!map[currentArtigo].porLoja[currentLoja]) {
+            map[currentArtigo].porLoja[currentLoja] = { qtd: 0, val: 0, mensal: new Array(12).fill(0) };
+          }
+          map[currentArtigo].porLoja[currentLoja].mensal[mesIdx] += val;
+          map[currentArtigo].porLoja[currentLoja].val += val;
+          map[currentArtigo].porLoja[currentLoja].qtd += qtd;
+        }
       }
     }
   });
-  const arr=Object.values(map).filter(p=>p.val>0||p.qtd>0);
-  if(!arr.length) return;
 
-  if(year===2026){
-    const novos=arr.map(p=>{
-      let fam=familiaFromCodigo(p.codigo);
-      if(isServico(p.nome)) fam='09';
-      return {nome:p.nome,codigo:p.codigo,familia:fam,qtd2026:p.qtd,val2026:p.val,qtd2025:0,val2025:0,mensal2026:p.mensal,mensal2025:new Array(12).fill(0)};
+  const arr = Object.keys(map).map(function(k){ return map[k]; }).filter(function(p){ return p.val > 0 || p.qtd > 0; });
+  if (!arr.length) {
+    console.warn('parseVendas: nenhum artigo com valor');
+    return;
+  }
+
+  if (year === 2026) {
+    const novos = arr.map(function(p) {
+      let fam = typeof familiaFromCodigo === 'function' ? familiaFromCodigo(p.codigo) : '08';
+      if (typeof isServico === 'function' && isServico(p.nome)) fam = '09';
+      return {
+        nome: p.nome, codigo: p.codigo, familia: fam,
+        qtd2026: p.qtd, val2026: p.val,
+        qtd2025: 0, val2025: 0,
+        mensal2026: p.mensal, mensal2025: new Array(12).fill(0),
+        porLoja: p.porLoja || {}
+      };
     });
-    produtos.forEach(ex=>{
-      const m=novos.find(n=>n.codigo===ex.codigo||n.nome===ex.nome);
-      if(m){ m.qtd2025=ex.qtd2025; m.val2025=ex.val2025; m.mensal2025=ex.mensal2025; }
-    });
-    produtos=novos;
-    reaplicarFamilias();
-  } else {
-    arr.forEach(p25=>{
-      const found=produtos.find(p=>p.codigo===p25.codigo||p.nome===p25.nome);
-      if(found){ found.qtd2025=p25.qtd; found.val2025=p25.val; found.mensal2025=p25.mensal; }
-      else {
-        let fam=familiaFromCodigo(p25.codigo);
-        if(isServico(p25.nome)) fam='09';
-        produtos.push({nome:p25.nome,codigo:p25.codigo,familia:fam,qtd2026:0,val2026:0,qtd2025:p25.qtd,val2025:p25.val,mensal2026:new Array(12).fill(0),mensal2025:p25.mensal});
+    (produtos || []).forEach(function(ex) {
+      const m = novos.find(function(n){ return n.codigo === ex.codigo || n.nome === ex.nome; });
+      if (m) {
+        m.qtd2025 = ex.qtd2025 || 0;
+        m.val2025 = ex.val2025 || 0;
+        m.mensal2025 = ex.mensal2025 || new Array(12).fill(0);
       }
     });
+    produtos = novos;
+    if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
+  } else {
+    arr.forEach(function(p25) {
+      const found = (produtos || []).find(function(p){ return p.codigo === p25.codigo || p.nome === p25.nome; });
+      if (found) {
+        found.qtd2025 = p25.qtd;
+        found.val2025 = p25.val;
+        found.mensal2025 = p25.mensal;
+      } else {
+        let fam = typeof familiaFromCodigo === 'function' ? familiaFromCodigo(p25.codigo) : '08';
+        if (typeof isServico === 'function' && isServico(p25.nome)) fam = '09';
+        produtos.push({
+          nome: p25.nome, codigo: p25.codigo, familia: fam,
+          qtd2026: 0, val2026: 0, qtd2025: p25.qtd, val2025: p25.val,
+          mensal2026: new Array(12).fill(0), mensal2025: p25.mensal,
+          porLoja: {}
+        });
+      }
+    });
+    if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
   }
 }
 
