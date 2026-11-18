@@ -166,10 +166,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
       <span>Topsellers / Famílias</span>
     </div>
-    <div class="nav-item" data-view="analise" onclick="showView('analise')">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 4 4 6-7"/></svg>
-      <span>Análise de Vendas</span>
-    </div>
     <div class="nav-item" data-view="comparativos" onclick="showView('comparativos')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       <span>Comparativos</span>
@@ -298,11 +294,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <ul class="rank-list" id="rankVolume"></ul>
       </div>
     </div>
-  </div>
 
-  <!-- ANÁLISE DE VENDAS -->
-  <div id="view-analise" class="view">
-    <div class="header-bar">
+    <div style="margin-top:1.8rem;padding-top:1.2rem;border-top:1px solid var(--border)"></div>
+    <div class="header-bar" style="margin-top:1.6rem;padding-top:1.2rem;border-top:1px solid var(--border)">
       <div>
         <h2>Análise de Vendas</h2>
         <div class="subtitle">Evolução mensal em valor e quantidade · filtros por período, artigo, família, subfamília e loja</div>
@@ -330,14 +324,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
     <div class="section-card">
       <div class="section-title">Evolução das vendas em valor (€)</div>
-      <div class="chart-wrap"><canvas id="chartAnaliseValor"></canvas></div>
+      <div class="chart-wrap" style="height:360px"><canvas id="chartAnaliseValor"></canvas></div>
     </div>
     <div class="section-card">
       <div class="section-title">Evolução das vendas em quantidade (unidades)</div>
-      <div class="chart-wrap"><canvas id="chartAnaliseQtd"></canvas></div>
+      <div class="chart-wrap" style="height:360px"><canvas id="chartAnaliseQtd"></canvas></div>
       <p style="font-size:.72rem;color:var(--muted);margin-top:.55rem">A evolução em quantidade depende das quantidades mensais presentes no ficheiro detalhado de vendas.</p>
     </div>
   </div>
+
+
 
   <!-- COMPARATIVOS -->
   <div id="view-comparativos" class="view">
@@ -923,7 +919,7 @@ function showView(name) {
   const nav=document.querySelector(`.nav-item[data-view="${name}"]`);
   if(nav) nav.classList.add('active');
   if(name==='visao') renderVisao();
-  if(name==='topsellers') renderTopsellers();
+  if(name==='topsellers') { renderTopsellers(); prepararFiltrosAnalise(); renderAnaliseVendas(); }
   if(name==='comparativos') renderComparativos();
   if(name==='analise') { prepararFiltrosAnalise(); renderAnaliseVendas(); }
   if(name==='lojas') renderLojas();
@@ -1909,25 +1905,51 @@ function renderAnaliseVendas() {
     if (ref === 'qtd' && chartAnaliseQtd) chartAnaliseQtd.destroy();
     const canvas = document.getElementById(ref === 'valor' ? 'chartAnaliseValor' : 'chartAnaliseQtd');
     if (!canvas) return null;
+    const rotulos = {
+      id:'rotulosAnalise',
+      afterDatasetsDraw:function(chart) {
+        const ctx=chart.ctx;
+        ctx.save();
+        ctx.font='600 11px Inter, sans-serif';
+        ctx.fillStyle='#e8f0eb';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        chart.data.datasets.forEach(function(ds,di) {
+          const meta=chart.getDatasetMeta(di);
+          if (meta.hidden) return;
+          meta.data.forEach(function(bar,i) {
+            const valor=Number(ds.data[i])||0;
+            if (!valor) return;
+            const texto=tipo==='valor'
+              ? new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(valor)
+              : new Intl.NumberFormat('pt-PT',{maximumFractionDigits:0}).format(valor);
+            ctx.fillText(texto,bar.x,bar.y-5);
+          });
+        });
+        ctx.restore();
+      }
+    };
     return new Chart(canvas.getContext('2d'), {
-      type:'line',
+      type:'bar',
       data:{labels:meses,datasets:series},
-      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-        plugins:{legend:{labels:{color:'#8ba894'}},tooltip:{callbacks:{label:function(ctx){
+      plugins:[rotulos],
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+        datasets:{bar:{categoryPercentage:.68,barPercentage:.82}},
+        plugins:{legend:{labels:{color:'#8ba894',usePointStyle:true}},tooltip:{callbacks:{label:function(ctx){
           return ctx.dataset.label + ': ' + (tipo==='valor' ? fmtEur(ctx.raw) : Number(ctx.raw||0).toLocaleString('pt-PT') + ' un');
         }}}},
-        scales:{x:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
-          y:{beginAtZero:true,ticks:{color:'#8ba894',callback:function(v){return tipo==='valor'?(v/1000)+'k':Number(v).toLocaleString('pt-PT');}},grid:{color:'rgba(255,255,255,.04)'}}}
+        scales:{x:{ticks:{color:'#8ba894'},grid:{display:false}},
+          y:{beginAtZero:true,ticks:{color:'#8ba894',callback:function(v){return tipo==='valor'?fmtEur(v):Number(v).toLocaleString('pt-PT');}},grid:{color:'rgba(255,255,255,.07)'}}}
       }
     });
   }
   chartAnaliseValor = desenhar('valor','valor',[
-    {label:'2026 · Valor',data:valores26,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.3},
-    {label:'2025 · Valor',data:valores25,borderColor:'#f97316',backgroundColor:'transparent',borderDash:[6,4],tension:.3}
+    {label:'2026 · Valor',data:valores26,backgroundColor:'rgba(34,197,94,.82)',borderColor:'#22c55e',borderWidth:1},
+    {label:'2025 · Valor',data:valores25,backgroundColor:'rgba(249,115,22,.78)',borderColor:'#f97316',borderWidth:1,hidden:loja!=='ALL'}
   ]);
   chartAnaliseQtd = desenhar('qtd','qtd',[
-    {label:'2026 · Quantidade',data:qtd26,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.3},
-    {label:'2025 · Quantidade',data:qtd25,borderColor:'#f97316',backgroundColor:'transparent',borderDash:[6,4],tension:.3}
+    {label:'2026 · Quantidade',data:qtd26,backgroundColor:'rgba(34,197,94,.82)',borderColor:'#22c55e',borderWidth:1},
+    {label:'2025 · Quantidade',data:qtd25,backgroundColor:'rgba(249,115,22,.78)',borderColor:'#f97316',borderWidth:1,hidden:loja!=='ALL'}
   ]);
 }
 
