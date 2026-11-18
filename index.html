@@ -711,10 +711,18 @@ function isAnimalAveEspecifico(produtoOuNome) {
       .trim() + ' ';
 
     return Array.from(NOMES_ANIMAIS_AVES_FAMILIA_08).some(function(nome) {
-      const termo = ' ' + normalizarNomeAnimal(nome)
+      const nomeNormalizado = normalizarNomeAnimal(nome)
         .replace(/[^\p{L}\p{N}]+/gu, ' ')
         .replace(/\s+/g, ' ')
-        .trim() + ' ';
+        .trim();
+      const termo = ' ' + nomeNormalizado + ' ';
+
+      // Nomes de uma palavra (Perus, Patos, Fracas, Codornizes) só identificam
+      // o artigo quando aparecem no início do nome, não em "ração para perus".
+      if (!nomeNormalizado.includes(' ')) {
+        return texto.startsWith(termo);
+      }
+      // Nomes compostos podem surgir com marca, tamanho ou complemento antes/depois.
       return texto.includes(termo);
     });
   });
