@@ -1393,7 +1393,9 @@ async function handleFiles(files) {
         return r && String(r[0] || '').trim().toLowerCase().indexOf('artigo') === 0;
       });
       const temTotalLiq = json.some(function(r) {
-        return r && String(r[0] || '').trim().toLowerCase().indexOf('total liq') >= 0;
+        return r && r.some(function(c) {
+          return String(c == null ? '' : c).trim().toLowerCase().indexOf('total liq') >= 0;
+        });
       });
       const anoNome = nome.match(/20(25|26)/);
       const ano = anoNome ? Number(anoNome[0]) : 2026;
@@ -1511,6 +1513,20 @@ function numeroVenda(valor) {
   return Number.isFinite(numero) ? numero : 0;
 }
 
+function numeroDaLinha(linha, indices) {
+  for (const indice of indices) {
+    const valor = linha && linha[indice];
+    if (valor == null || valor === '') continue;
+    if (typeof valor === 'number' && Number.isFinite(valor)) return valor;
+
+    const texto = String(valor).trim()
+      .replace(/\u00a0/g, '')
+      .replace(/\s/g, '');
+    if (/^€?-?[\d.,]+€?$/.test(texto)) return numeroVenda(valor);
+  }
+  return 0;
+}
+
 function parseResumo(rows) {
   /* Resumo Primavera: [0]="Total" [1]=Mês [2]=Total Líquido. */
   const new26 = new Array(12).fill(0);
@@ -1532,7 +1548,7 @@ function parseResumo(rows) {
     if (c0.toLowerCase() !== 'total') return;
     const idx = mesIndex(c1);
     if (idx < 0) return;
-    const val = numeroVenda(r[2]);
+    const val = numeroDaLinha(r, [2, 3, 4, 5, 6, 7, 8]);
     if (Number.isFinite(val)) {
       new26[idx] = val;
       found++;
@@ -1598,8 +1614,7 @@ function parseVendas(rows, year) {
     if (lojaNome && currentArtigo) {
       // colunas: [cod, , qtd, bruto, 'UN', desc, liquido, ...]
       const qtd = n(r[2]);
-      let val = n(r[6]);
-      if (!val) val = n(r[3]); // fallback bruto
+      const val = numeroDaLinha(r, [6, 5, 3]);
       bufferLojas.push({ loja: lojaNome, qtd: qtd, val: val });
       return;
     }
@@ -1609,9 +1624,7 @@ function parseVendas(rows, year) {
       const mesIdx = isMes(c1);
       if (mesIdx >= 0 && currentArtigo && map[currentArtigo]) {
         const qtdTot = n(r[2]);
-        let valTot = n(r[6]);
-        if (!valTot) valTot = n(r[3]);
-        if (!valTot) valTot = n(r[5]);
+        const valTot = numeroDaLinha(r, [5, 4, 6, 3]);
 
         map[currentArtigo].mensal[mesIdx] += valTot;
         map[currentArtigo].val += valTot;
