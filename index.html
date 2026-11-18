@@ -722,7 +722,7 @@ function isAnimalAveEspecifico(produtoOuNome) {
     if (campo == null) return false;
     const textoLimpo = typeof limparNome === 'function' ? limparNome(campo) : campo;
     const texto = normalizarNomeAnimal(textoLimpo)
-      .replace(/[^\\p{L}\\p{N}]+/gu, ' ')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .replace(/\\s+/g, ' ')
       .trim();
     return nomesPermitidos.some(function(nome) {
