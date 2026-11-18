@@ -709,7 +709,8 @@ function getSubfamilia(p) {
   // Correspondência exata: só os nomes definidos pelo utilizador entram nesta subfamília.
   if (isAnimalAveEspecifico(p.nome)) return 'ANIMAIS E AVES';
 
-  if (p.subfamilia) return p.subfamilia;
+  // Ignorar a classificação ampla antiga, que foi substituída pela lista exata de nomes.
+  if (p.subfamilia && p.subfamilia !== 'ANIMAIS E AVES') return p.subfamilia;
   if (!raw || typeof SUBFAMILIA_POR_CODIGO === 'undefined') return '';
   if (SUBFAMILIA_POR_CODIGO[raw]) return SUBFAMILIA_POR_CODIGO[raw];
   if (dig && SUBFAMILIA_POR_CODIGO[dig]) return SUBFAMILIA_POR_CODIGO[dig];
