@@ -697,8 +697,27 @@ function normalizarNomeAnimal(nome) {
     .trim();
 }
 
-function isAnimalAveEspecifico(nome) {
-  return NOMES_ANIMAIS_AVES_FAMILIA_08.has(normalizarNomeAnimal(nome));
+function isAnimalAveEspecifico(produtoOuNome) {
+  // Os dados podem trazer texto adicional antes/depois do nome do artigo.
+  // Procuramos os 11 nomes como expressões completas dentro da descrição normalizada.
+  const campos = typeof produtoOuNome === 'object' && produtoOuNome !== null
+    ? [produtoOuNome.nome, produtoOuNome.descricao, produtoOuNome.designacao, produtoOuNome.artigoDescricao]
+    : [produtoOuNome];
+
+  return campos.some(function(campo) {
+    const texto = ' ' + normalizarNomeAnimal(campo)
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() + ' ';
+
+    return Array.from(NOMES_ANIMAIS_AVES_FAMILIA_08).some(function(nome) {
+      const termo = ' ' + normalizarNomeAnimal(nome)
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim() + ' ';
+      return texto.includes(termo);
+    });
+  });
 }
 
 function getSubfamilia(p) {
@@ -707,7 +726,7 @@ function getSubfamilia(p) {
   const dig = raw.replace(/\D/g, '');
 
   // Correspondência exata: só os nomes definidos pelo utilizador entram nesta subfamília.
-  if (isAnimalAveEspecifico(p.nome)) return 'ANIMAIS E AVES';
+  if (isAnimalAveEspecifico(p)) return 'ANIMAIS E AVES';
 
   // Ignorar a classificação ampla antiga, que foi substituída pela lista exata de nomes.
   if (p.subfamilia && p.subfamilia !== 'ANIMAIS E AVES') return p.subfamilia;
@@ -727,7 +746,7 @@ function getFamilia(p) {
   const raw = p.codigo == null ? '' : String(p.codigo).trim();
   const dig = raw.replace(/\D/g, '');
   // Apenas os 11 nomes definidos pelo utilizador pertencem à subfamília de animais e aves da família 08.
-  if (isAnimalAveEspecifico(p.nome)) return '08';
+  if (isAnimalAveEspecifico(p)) return '08';
   // 1) mapa subfamílias (lookup O(1))
   if (dig && typeof FAMILIA_POR_CODIGO_SUB !== 'undefined') {
     if (FAMILIA_POR_CODIGO_SUB[raw]) return FAMILIA_POR_CODIGO_SUB[raw];
