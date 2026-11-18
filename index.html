@@ -706,7 +706,7 @@ function isAnimalAveEspecifico(produtoOuNome) {
   ]);
 
   if (produtoOuNome && typeof produtoOuNome === 'object') {
-    const codigo = String(produtoOuNome.codigo == null ? '' : produtoOuNome.codigo).replace(/\\D/g, '');
+    const codigo = String(produtoOuNome.codigo == null ? '' : produtoOuNome.codigo).replace(/\D/g, '');
     if (codigosPermitidos.has(codigo)) return true;
   }
 
