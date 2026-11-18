@@ -146,6 +146,32 @@ tr:hover td{background:rgba(255,255,255,.02)}
   .main{margin-left:64px;padding:1rem}
   .quarter-grid{grid-template-columns:1fr 1fr}
 }
+  @media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  body.print-analise, body.print-analise * { visibility: hidden !important; }
+  body.print-analise #analiseVendasPrint,
+  body.print-analise #analiseVendasPrint * { visibility: visible !important; }
+  body.print-analise #analiseVendasPrint {
+    position: absolute !important; left: 0 !important; top: 0 !important;
+    width: 100% !important; margin: 0 !important; padding: 0 !important;
+    color: #17251c !important; background: #fff !important;
+  }
+  body.print-analise #analiseVendasPrint .no-print,
+  body.print-analise #analiseVendasPrint select,
+  body.print-analise #analiseVendasPrint label { display: none !important; }
+  body.print-analise #analiseVendasPrint .section-card {
+    background: #fff !important; color: #17251c !important;
+    border: 1px solid #cbd5d1 !important; box-shadow: none !important;
+    break-inside: avoid; margin-bottom: 8mm !important;
+  }
+  body.print-analise #analiseVendasPrint h2,
+  body.print-analise #analiseVendasPrint .section-title,
+  body.print-analise #analiseVendasPrint .subtitle,
+  body.print-analise #analiseVendasPrint #analiseResumo,
+  body.print-analise #analiseVendasPrint #analiseComparativo { color: #17251c !important; }
+  body.print-analise #analiseVendasPrint .chart-wrap { height: 280px !important; }
+  body.print-analise #analiseVendasPrint canvas { max-width: 100% !important; }
+}
 </style>
 </head>
 <body>
@@ -296,11 +322,13 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
 
     <div style="margin-top:1.8rem;padding-top:1.2rem;border-top:1px solid var(--border)"></div>
+    <div id="analiseVendasPrint">
     <div class="header-bar" style="margin-top:1.6rem;padding-top:1.2rem;border-top:1px solid var(--border)">
       <div>
         <h2>Análise de Vendas</h2>
         <div class="subtitle">Evolução mensal em valor e quantidade · filtros por período, artigo, família, subfamília e loja</div>
       </div>
+      <button class="btn btn-primary no-print" type="button" onclick="imprimirAnaliseVendas()">🖨 Imprimir análise</button>
     </div>
     <div class="section-card">
       <div class="section-title">Filtros da análise</div>
@@ -335,6 +363,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 
 
+
+    </div>
 
   <!-- COMPARATIVOS -->
   <div id="view-comparativos" class="view">
@@ -1793,15 +1823,33 @@ function parseVendas(rows, year) {
         found.val2025 = p25.val;
         found.mensal2025 = p25.mensal;
         found.mensalQtd2025 = p25.mensalQtd;
+        found.porLoja = found.porLoja || {};
+        Object.keys(p25.porLoja || {}).forEach(function(nomeLoja) {
+          const origem = p25.porLoja[nomeLoja];
+          const destino = found.porLoja[nomeLoja] || (found.porLoja[nomeLoja] = {});
+          destino.qtd2025 = origem.qtd;
+          destino.val2025 = origem.val;
+          destino.mensal2025 = origem.mensal.slice();
+          destino.mensalQtd2025 = origem.mensalQtd.slice();
+        });
       } else {
         let fam = typeof familiaFromCodigo === 'function' ? familiaFromCodigo(p25.codigo) : '08';
         if (typeof isServico === 'function' && isServico(p25.nome)) fam = '09';
+        const porLoja2025 = {};
+        Object.keys(p25.porLoja || {}).forEach(function(nomeLoja) {
+          const origem = p25.porLoja[nomeLoja];
+          porLoja2025[nomeLoja] = {
+            qtd2025: origem.qtd, val2025: origem.val,
+            mensal2025: origem.mensal.slice(),
+            mensalQtd2025: origem.mensalQtd.slice()
+          };
+        });
         produtos.push({
           nome: p25.nome, codigo: p25.codigo, familia: fam,
           qtd2026: 0, val2026: 0, qtd2025: p25.qtd, val2025: p25.val,
           mensal2026: new Array(12).fill(0), mensal2025: p25.mensal,
           mensalQtd2026: new Array(12).fill(0), mensalQtd2025: p25.mensalQtd,
-          porLoja: {}
+          porLoja: porLoja2025
         });
       }
     });
@@ -1862,6 +1910,43 @@ function atualizarFiltrosAnalise(origem) {
   if (origem !== 'familia' && origem !== 'subfamilia' && Array.from(prod.options).some(function(o){return o.value===produtoAnterior;})) prod.value = produtoAnterior;
   renderAnaliseVendas();
 }
+function imprimirAnaliseVendas() {
+  const charts = [chartAnaliseValor, chartAnaliseQtd].filter(Boolean);
+  const anteriores = charts.map(function(chart) {
+    return {
+      chart: chart,
+      legend: chart.options.plugins.legend.labels.color,
+      x: chart.options.scales.x.ticks.color,
+      y: chart.options.scales.y.ticks.color,
+      grid: chart.options.scales.y.grid.color
+    };
+  });
+  charts.forEach(function(chart) {
+    chart.options.plugins.legend.labels.color = '#334155';
+    chart.options.scales.x.ticks.color = '#334155';
+    chart.options.scales.y.ticks.color = '#334155';
+    chart.options.scales.y.grid.color = 'rgba(15,23,42,.12)';
+    chart.update('none');
+  });
+  document.body.classList.add('print-analise');
+  const restaurar = function() {
+    document.body.classList.remove('print-analise');
+    anteriores.forEach(function(item) {
+      item.chart.options.plugins.legend.labels.color = item.legend;
+      item.chart.options.scales.x.ticks.color = item.x;
+      item.chart.options.scales.y.ticks.color = item.y;
+      item.chart.options.scales.y.grid.color = item.grid;
+      item.chart.update('none');
+    });
+    window.removeEventListener('afterprint', restaurar);
+  };
+  window.addEventListener('afterprint', restaurar);
+  window.print();
+  setTimeout(function() {
+    if (document.body.classList.contains('print-analise')) restaurar();
+  }, 1000);
+}
+
 function renderAnaliseVendas() {
   const inicioEl = document.getElementById('analiseMesInicio');
   const fimEl = document.getElementById('analiseMesFim');
@@ -1887,10 +1972,12 @@ function renderAnaliseVendas() {
     let v26=0,v25=0,q26=0,q25=0;
     lista.forEach(function(p) {
       let dados = loja === 'ALL' ? p : ((p.porLoja || {})[loja] || {});
-      const mv = ano === 2025 ? (loja === 'ALL' ? p.mensal2025 : null) : (loja === 'ALL' ? p.mensal2026 : dados.mensal);
+      const mv = ano === 2025
+        ? (loja === 'ALL' ? p.mensal2025 : dados.mensal2025)
+        : (loja === 'ALL' ? p.mensal2026 : dados.mensal);
       // Compatibilidade com registos antigos que guardavam a quantidade mensal com outro nome.
       const mq = ano === 2025
-        ? (loja === 'ALL' && Array.isArray(p.mensalQtd2025) ? p.mensalQtd2025 : null)
+        ? (loja === 'ALL' ? p.mensalQtd2025 : dados.mensalQtd2025)
         : (loja === 'ALL' ? (Array.isArray(p.mensalQtd2026) ? p.mensalQtd2026 : p.mensalQtd) : dados.mensalQtd);
       const valor = Number(mv && mv[mes]) || 0;
       const quantidade = Number(mq && mq[mes]) || 0;
@@ -1982,12 +2069,12 @@ function renderAnaliseVendas() {
   }
   chartAnaliseValor = desenhar('valor','valor',[
     {label:'2026 · Valor',data:valores26,backgroundColor:'rgba(34,197,94,.78)',borderColor:'#22c55e',borderWidth:1,borderRadius:5,order:2},
-    {label:'2025 · Valor',data:valores25,backgroundColor:'rgba(249,115,22,.72)',borderColor:'#f97316',borderWidth:1,borderRadius:5,hidden:loja!=='ALL',order:2},
+    {label:'2025 · Valor',data:valores25,backgroundColor:'rgba(249,115,22,.72)',borderColor:'#f97316',borderWidth:1,borderRadius:5,order:2},
     {type:'line',label:'Evolução 2026',data:valores26,borderColor:'#facc15',backgroundColor:'#facc15',borderWidth:3,tension:.38,fill:false,pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#17251c',pointBorderWidth:2,order:1}
   ]);
   chartAnaliseQtd = desenhar('qtd','qtd',[
     {label:'2026 · Quantidade',data:qtd26,backgroundColor:'rgba(34,197,94,.82)',borderColor:'#22c55e',borderWidth:1},
-    {label:'2025 · Quantidade',data:qtd25,backgroundColor:'rgba(249,115,22,.78)',borderColor:'#f97316',borderWidth:1,hidden:loja!=='ALL'}
+    {label:'2025 · Quantidade',data:qtd25,backgroundColor:'rgba(249,115,22,.78)',borderColor:'#f97316',borderWidth:1}
   ]);
 }
 
