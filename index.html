@@ -698,7 +698,18 @@ function normalizarNomeAnimal(nome) {
 }
 
 function isAnimalAveEspecifico(produtoOuNome) {
-  // Lista fechada: apenas estes 11 artigos pertencem a ANIMAIS E AVES.
+  // Classificação por código Primavera: estes 12 artigos pertencem a ANIMAIS E AVES.
+  const codigosPermitidos = new Set([
+    '82500001', '82500002', '82500003', '82500004',
+    '82500005', '82500006', '82500007', '82500011',
+    '82500012', '82500014', '82500015', '82500019'
+  ]);
+
+  if (produtoOuNome && typeof produtoOuNome === 'object') {
+    const codigo = String(produtoOuNome.codigo == null ? '' : produtoOuNome.codigo).replace(/\\D/g, '');
+    if (codigosPermitidos.has(codigo)) return true;
+  }
+
   const nomesPermitidos = [
     'pintos 2 semanas',
     'frangas poedeiras pequenas',
@@ -737,7 +748,7 @@ function getSubfamilia(p) {
   const raw = p.codigo == null ? '' : String(p.codigo).trim();
   const dig = raw.replace(/\D/g, '');
 
-  // Correspondência exata: só os nomes definidos pelo utilizador entram nesta subfamília.
+  // Correspondência exata pelos códigos Primavera fornecidos e pelos nomes já definidos.
   if (isAnimalAveEspecifico(p)) return 'ANIMAIS E AVES';
 
   // Ignorar a classificação ampla antiga, que foi substituída pela lista exata de nomes.
