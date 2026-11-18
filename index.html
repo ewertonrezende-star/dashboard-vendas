@@ -690,30 +690,20 @@ const NOMES_ANIMAIS_AVES_FAMILIA_08 = new Set([
 
 function normalizarNomeAnimal(nome) {
   return String(nome == null ? "" : nome)
+    // Tratar espaços e caracteres que podem chegar codificados do ficheiro/API.
+    .replace(/&#x0*20;|&#0*32;|&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "e")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
+    .replace(/<[^>]*>/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 function isAnimalAveEspecifico(produtoOuNome) {
-  // Apenas os 11 nomes definidos pelo utilizador entram em ANIMAIS E AVES.
-  // A comparação é exata após normalizar maiúsculas, acentos e espaços.
-  const nomesPermitidos = new Set([
-    "pintos 2 semanas",
-    "frangas poedeiras pequenas",
-    "perus",
-    "patos",
-    "frangas poedeiras grande",
-    "fracas",
-    "galo grande",
-    "pintos 3 semanas",
-    "codornizes",
-    "frangas poedeiras grandes cores",
-    "frangas poedeiras araucana"
-  ]);
-
+  // Usa exclusivamente os 11 nomes autorizados na lista do utilizador.
   const campos = typeof produtoOuNome === 'object' && produtoOuNome !== null
     ? [
         produtoOuNome.nome,
@@ -728,11 +718,16 @@ function isAnimalAveEspecifico(produtoOuNome) {
     : [produtoOuNome];
 
   return campos.some(function(campo) {
-    const nome = normalizarNomeAnimal(campo)
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return nomesPermitidos.has(nome);
+    let nome = normalizarNomeAnimal(campo);
+    if (typeof limparNome === 'function') nome = normalizarNomeAnimal(limparNome(campo));
+    if (!nome) return false;
+
+    // Aceita o nome completo mesmo quando a exportação acrescenta código ou detalhe.
+    // A expressão exige limites entre palavras: não classifica por palavras soltas.
+    return Array.from(NOMES_ANIMAIS_AVES_FAMILIA_08).some(function(permitido) {
+      const alvo = normalizarNomeAnimal(permitido);
+      return nome === alvo || (' ' + nome + ' ').includes(' ' + alvo + ' ');
+    });
   });
 }
 
