@@ -952,11 +952,12 @@ function renderVisao() {
   const ar = el('anualResumo');
   if (ar) {
     const v25_24 = tot24 ? ((tot25 - tot24) / tot24 * 100) : 0;
-    const v26_25 = tot25 && meses26 ? ((tot26 - a25) / a25 * 100) : 0; // vs mesmo período
+    const v26_25 = a25 ? ((a26 - a25) / a25 * 100) : 0; // compara apenas meses completos
+    const periodoComparavel = lastIdx >= 0 ? MESES[lastIdx].toLowerCase() : 'sem dados';
     ar.innerHTML =
       '<span><strong style="color:#60a5fa">2024:</strong> ' + fmtEur(tot24) + ' (ano completo)</span>' +
       '<span><strong style="color:#f97316">2025:</strong> ' + fmtEur(tot25) + ' (' + (v25_24 >= 0 ? '+' : '') + v25_24.toFixed(1) + '% vs 2024)</span>' +
-      '<span><strong style="color:#22c55e">2026 YTD:</strong> ' + fmtEur(tot26) + ' · mesmo período 2025: ' + fmtEur(a25) + ' (' + (p25 >= 0 ? '+' : '') + p25.toFixed(1) + '%)</span>';
+      '<span><strong style="color:#22c55e">2026 até ' + periodoComparavel + ':</strong> ' + fmtEur(a26) + ' · 2025 mesmo período: ' + fmtEur(a25) + ' (' + (v26_25 >= 0 ? '+' : '') + v26_25.toFixed(1) + '%)</span>';
   }
 
   // Trimestres
@@ -976,11 +977,16 @@ function renderVisao() {
         s24 += (typeof data2024 !== 'undefined' ? data2024[i] : 0) || 0;
       }
       const vp = s25 ? ((s26 - s25) / s25 * 100) : 0;
+      const mesAtualQ = new Date().getMonth();
+      const estadoTrimestre = qi.i0 > mesAtualQ
+        ? 'Ainda não iniciado'
+        : (qi.i1 >= mesAtualQ ? 'Trimestre em curso · sem comparação' : fmtPct(vp) + ' vs 2025');
+      const classeTrimestre = qi.i1 < mesAtualQ ? (vp >= 0 ? 'pos' : 'neg') : '';
       return '<div class="quarter-card">' +
         '<div class="q-label">' + qi.label + '</div>' +
         '<div class="q-val">' + fmtEur(s26) + '</div>' +
         '<div class="q-sub">2025: ' + fmtEur(s25) + ' · 2024: ' + fmtEur(s24) + '</div>' +
-        '<div class="q-var ' + (vp >= 0 ? 'pos' : 'neg') + '">' + fmtPct(vp) + ' vs 2025</div>' +
+        '<div class="q-var ' + classeTrimestre + '">' + estadoTrimestre + '</div>' +
         '</div>';
     }).join('');
   }
