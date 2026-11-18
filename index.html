@@ -324,6 +324,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <tbody></tbody>
         </table>
       </div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">* O mês em curso pode estar incompleto. As variações e os acumulados comparáveis são apresentados apenas até ao último mês completo.</p>
     </div>
   </div>
 
@@ -452,6 +453,7 @@ async function carregarDoSupabase() {
     if (Array.isArray(data.produtos) && data.produtos.length) {
       produtos = data.produtos;
       reaplicarFamilias();
+      atualizarMatriz2026DeProdutos();
     }
     console.log('Dados carregados do Supabase', data.atualizado_em);
     return true;
@@ -743,11 +745,11 @@ let subfamiliaAtual = 'ALL';
 const LOJAS = ['Sintra','Colares','Albarraque','Arneiro','Mem Martins','Sabugo'];
 const LOJA_CODIGO = {
   '000': 'Sintra', '00': 'Sintra', '0': 'Sintra',
-  '001': 'Colares', '01': 'Colares', '1': 'Colares',
-  '002': 'Albarraque', '02': 'Albarraque', '2': 'Albarraque',
-  '003': 'Arneiro', '03': 'Arneiro', '3': 'Arneiro',
-  '007': 'Mem Martins', '07': 'Mem Martins', '7': 'Mem Martins',
-  '008': 'Sabugo', '08': 'Sabugo', '8': 'Sabugo'
+  '001': 'Albarraque', '01': 'Albarraque', '1': 'Albarraque',
+  '002': 'Mem Martins', '02': 'Mem Martins', '2': 'Mem Martins',
+  '003': 'Colares', '03': 'Colares', '3': 'Colares',
+  '007': 'Sabugo', '07': 'Sabugo', '7': 'Sabugo',
+  '008': 'Arneiro', '08': 'Arneiro', '8': 'Arneiro'
 };
 function resolverLoja(cod) {
   if (cod == null || cod === '') return null;
@@ -770,7 +772,7 @@ const matriz_2025 = {
   'Sabugo':[15234.87,15610.52,13650.85,16455.5,15860.12,12654.06,12429.4,12223.74,13905.53,16282.82,14667.34,13168.46],
   'Sintra':[41081.19,47782.56,48265.76,62051.38,75585.72,57918.71,50581.63,40031.84,50781.81,55867.34,42545.3,36901.17]
 };
-const matriz_2026 = {
+let matriz_2026 = {
   'Albarraque':[44270.57,43108.88,59651.91,57495.22,51305.72,44250.64,48217.96,41617.56,47940.98,15645.9,0,0],
   'Arneiro':[27131.03,26820.16,39128.58,35738.62,32653.37,27013.49,28551.53,24134.04,24763.6,8168.64,0,0],
   'Colares':[50005.39,49837.46,79870.64,81335.39,76146.25,67783.76,65528.03,57283.64,61536.7,14600.3,0,0],
@@ -778,6 +780,27 @@ const matriz_2026 = {
   'Sabugo':[14863.55,14293.69,23462.45,23351.62,17507.09,16102.33,15075.42,14404.29,15853.93,4555.12,0,0],
   'Sintra':[77698.99,102835.8,142136.69,118402.51,140007.34,105999.6,97411.7,83120.94,98761.48,25692.94,0,0]
 };
+
+function atualizarMatriz2026DeProdutos() {
+  const novaMatriz = {};
+  LOJAS.forEach(function(loja) { novaMatriz[loja] = new Array(12).fill(0); });
+  let encontrouDetalhe = false;
+
+  (produtos || []).forEach(function(p) {
+    const porLoja = p && p.porLoja ? p.porLoja : {};
+    LOJAS.forEach(function(loja) {
+      const dadosLoja = porLoja[loja];
+      if (!dadosLoja || !Array.isArray(dadosLoja.mensal)) return;
+      encontrouDetalhe = true;
+      for (let i = 0; i < 12; i++) {
+        novaMatriz[loja][i] += Number(dadosLoja.mensal[i]) || 0;
+      }
+    });
+  });
+
+  if (encontrouDetalhe) matriz_2026 = novaMatriz;
+  return encontrouDetalhe;
+}
 
 let data2026 = [232500.37, 257247.96, 373096.63, 342544.19, 345154.6, 281880.17, 277305.5, 240554.22, 272846.75, 274049.34, 0, 0];
 const data2025 = [229184.25, 240978.37, 260704.33, 297576.15, 370225.69, 289327.14, 291348.89, 228137.83, 285606.96, 321244.18, 240515.17, 242156.92]; // FIXO — não alterar
@@ -823,10 +846,18 @@ function renderVisao() {
   const acum2025 = calcAcum(data2025);
   const acum2024 = calcAcum(typeof data2024 !== 'undefined' ? data2024 : new Array(12).fill(0));
 
-  let lastIdx = 0;
-  for (let i = 11; i >= 0; i--) {
+  let lastIdx = -1;
+  const mesAtual = new Date().getMonth();
+  for (let i = Math.min(11, mesAtual - 1); i >= 0; i--) {
     if ((data2026[i] || 0) > 0) { lastIdx = i; break; }
   }
+  // Em janeiro ou sem meses fechados com dados, usar o último mês disponível.
+  if (lastIdx < 0) {
+    for (let i = 11; i >= 0; i--) {
+      if ((data2026[i] || 0) > 0) { lastIdx = i; break; }
+    }
+  }
+  if (lastIdx < 0) lastIdx = 0;
 
   const a26 = acum2026[lastIdx] || 0;
   const a25 = acum2025[lastIdx] || 0;
@@ -865,9 +896,9 @@ function renderVisao() {
       data: {
         labels: MESES_ABREV,
         datasets: [
-          { label: 'Acumulado 2026', data: acum2026, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.12)', fill: true, tension: .3, pointRadius: 4, borderWidth: 3 },
-          { label: 'Acumulado 2025', data: acum2025, borderColor: '#f97316', backgroundColor: 'transparent', borderDash: [6, 4], tension: .3, pointRadius: 3, borderWidth: 2 },
-          { label: 'Acumulado 2024', data: acum2024, borderColor: '#60a5fa', backgroundColor: 'transparent', borderDash: [2, 4], tension: .3, pointRadius: 3, borderWidth: 2 }
+          { label: 'Acumulado 2026 (até último mês fechado)', data: acum2026.map(function(v, i) { return i <= lastIdx ? v : null; }), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.12)', fill: true, tension: .3, pointRadius: 4, borderWidth: 3 },
+          { label: 'Acumulado 2025', data: acum2025.map(function(v, i) { return i <= lastIdx ? v : null; }), borderColor: '#f97316', backgroundColor: 'transparent', borderDash: [6, 4], tension: .3, pointRadius: 3, borderWidth: 2 },
+          { label: 'Acumulado 2024', data: acum2024.map(function(v, i) { return i <= lastIdx ? v : null; }), borderColor: '#60a5fa', backgroundColor: 'transparent', borderDash: [2, 4], tension: .3, pointRadius: 3, borderWidth: 2 }
         ]
       },
       options: {
@@ -1162,14 +1193,18 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeProductModal(
 function renderComparativos() {
   if (chartComp) chartComp.destroy();
   const d24 = typeof data2024 !== 'undefined' ? data2024 : new Array(12).fill(0);
+  const mesAtual = new Date().getMonth(); // índice do mês em curso
+  const grafico2026 = data2026.map(function(v, i) { return i > mesAtual ? null : v; });
+  const grafico2025 = data2025.map(function(v, i) { return i >= mesAtual ? null : v; });
+  const grafico2024 = d24.map(function(v, i) { return i >= mesAtual ? null : v; });
   chartComp = new Chart(document.getElementById('chartComp').getContext('2d'), {
     type: 'bar',
     data: {
       labels: MESES_ABREV,
       datasets: [
-        { label: '2026', data: data2026, backgroundColor: 'rgba(34,197,94,.85)', borderRadius: 4 },
-        { label: '2025', data: data2025, backgroundColor: 'rgba(249,115,22,.75)', borderRadius: 4 },
-        { label: '2024', data: d24, backgroundColor: 'rgba(96,165,250,.75)', borderRadius: 4 }
+        { label: '2026 (mês atual parcial)', data: grafico2026, backgroundColor: 'rgba(34,197,94,.85)', borderRadius: 4 },
+        { label: '2025', data: grafico2025, backgroundColor: 'rgba(249,115,22,.75)', borderRadius: 4 },
+        { label: '2024', data: grafico2024, backgroundColor: 'rgba(96,165,250,.75)', borderRadius: 4 }
       ]
     },
     options: {
@@ -1192,28 +1227,38 @@ function renderComparativos() {
   if (tbody) {
     tbody.innerHTML = MESES.map(function(m, i) {
       const v26 = data2026[i] || 0, v25 = data2025[i] || 0, v24 = d24[i] || 0;
+      const comparar = i < mesAtual; // apenas meses completos
       const d1 = v26 - v25, p1 = v25 ? (d1 / v25 * 100) : 0;
       const d2 = v26 - v24, p2 = v24 ? (d2 / v24 * 100) : 0;
+      const indiceAcum = i < mesAtual ? i : mesAtual - 1;
+      const acum26Visivel = indiceAcum >= 0 ? fmtEur(acum2026[indiceAcum]) : '—';
+      const acum25Visivel = indiceAcum >= 0 ? fmtEur(acum2025[indiceAcum]) : '—';
+      const acum24Visivel = indiceAcum >= 0 ? fmtEur(acum2024[indiceAcum]) : '—';
+      const variacao = comparar ? fmtEur(d1) : '—';
+      const percentagem = comparar ? fmtPct(p1) : '—';
+      const variacao24 = comparar ? fmtEur(d2) : '—';
+      const percentagem24 = comparar ? fmtPct(p2) : '—';
       return '<tr>' +
-        '<td>' + m + '</td>' +
+        '<td>' + m + (i === mesAtual ? ' *' : '') + '</td>' +
         '<td>' + fmtEur(v26) + '</td><td>' + fmtEur(v25) + '</td><td>' + fmtEur(v24) + '</td>' +
-        '<td class="' + (d1 >= 0 ? 'pos' : 'neg') + '">' + fmtEur(d1) + '</td>' +
-        '<td class="' + (p1 >= 0 ? 'pos' : 'neg') + '">' + fmtPct(p1) + '</td>' +
-        '<td class="' + (d2 >= 0 ? 'pos' : 'neg') + '">' + fmtEur(d2) + '</td>' +
-        '<td class="' + (p2 >= 0 ? 'pos' : 'neg') + '">' + fmtPct(p2) + '</td>' +
-        '<td>' + fmtEur(acum2026[i]) + '</td><td>' + fmtEur(acum2025[i]) + '</td><td>' + fmtEur(acum2024[i]) + '</td>' +
+        '<td class="' + (comparar ? (d1 >= 0 ? 'pos' : 'neg') : '') + '">' + variacao + '</td>' +
+        '<td class="' + (comparar ? (p1 >= 0 ? 'pos' : 'neg') : '') + '">' + percentagem + '</td>' +
+        '<td class="' + (comparar ? (d2 >= 0 ? 'pos' : 'neg') : '') + '">' + variacao24 + '</td>' +
+        '<td class="' + (comparar ? (p2 >= 0 ? 'pos' : 'neg') : '') + '">' + percentagem24 + '</td>' +
+        '<td>' + (i > mesAtual ? '—' : acum26Visivel) + '</td><td>' + (i > mesAtual ? '—' : acum25Visivel) + '</td><td>' + (i > mesAtual ? '—' : acum24Visivel) + '</td>' +
         '</tr>';
     }).join('');
   }
 }
 
 function renderLojas() {
-  let ultimoMes=10;
-  LOJAS.forEach(l=>{
-    for(let m=11;m>=0;m--){
-      if((matriz_2026[l]?.[m]||0)>0){ ultimoMes=Math.max(ultimoMes,m+1); break; }
+  const limiteMesesFechados = new Date().getMonth();
+  let ultimoMes = 0;
+  for (let m = 0; m < limiteMesesFechados; m++) {
+    if (LOJAS.some(function(loja) { return (matriz_2026[loja]?.[m] || 0) > 0; })) {
+      ultimoMes = m + 1;
     }
-  });
+  }
   const ytd=LOJAS.map(loja=>{
     let y25=0,y26=0;
     for(let m=0;m<ultimoMes;m++){ y25+=matriz_2025[loja][m]||0; y26+=matriz_2026[loja]?.[m]||0; }
@@ -1295,8 +1340,8 @@ function renderLojaMensal() {
       data:{
         labels:MESES_ABREV,
         datasets:[
-          {label:loja+' 2026',data:matriz_2026[loja]||Array(12).fill(0),backgroundColor:'rgba(34,197,94,.85)',borderRadius:4},
-          {label:loja+' 2025',data:matriz_2025[loja]||Array(12).fill(0),backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}
+          {label:loja+' 2026',data:(matriz_2026[loja]||Array(12).fill(0)).map((v,i)=>i>new Date().getMonth()?null:(i===new Date().getMonth()?null:v)),backgroundColor:'rgba(34,197,94,.85)',borderRadius:4},
+          {label:loja+' 2025',data:(matriz_2025[loja]||Array(12).fill(0)).map((v,i)=>i>=new Date().getMonth()?null:v),backgroundColor:'rgba(249,115,22,.7)',borderRadius:4}
         ]
       },
       options:{
@@ -1321,86 +1366,148 @@ if(dropZone&&fileInput){
   fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
 }
 
-function handleFiles(files) {
-  Array.from(files).forEach(function(f) {
-    const name = f.name.toLowerCase();
-    const reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        const data = new Uint8Array(ev.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        let json = [];
-        wb.SheetNames.forEach(function(sn) {
-          const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
-          json = json.concat(rows);
-        });
+async function handleFiles(files) {
+  const lista = Array.from(files || []);
+  if (!lista.length) return;
 
-        const hasArtigo = json.some(function(r) {
-          return r && String(r[0] || '').toLowerCase().indexOf('artigo') === 0;
-        });
-        const hasTotalLiq = json.some(function(r) {
-          return r && String(r[0] || '').toLowerCase().indexOf('total liq') >= 0;
-        });
-        // Resumo Primavera: tem "Total Liq." e NÃO tem "Artigo:"
-        const isResumo = hasTotalLiq && !hasArtigo;
-        const isDetalhada = hasArtigo || name.indexOf('detalh') >= 0;
+  const status = document.getElementById('supabaseStatus');
+  if (status) status.textContent = 'A ler e validar os ficheiros…';
 
-        if (isResumo) {
-          parseResumo(json);
-          var chip = document.getElementById('chip-resumo');
-          if (chip) { chip.className = 'file-chip ok'; chip.textContent = 'Resumo: ✓ ' + f.name; }
-        } else if (isDetalhada) {
-          parseVendas(json, 2026);
-          var chip2 = document.getElementById('chip-2026');
-          if (chip2) { chip2.className = 'file-chip ok'; chip2.textContent = 'Vendas 2026: ✓ ' + f.name; }
-        } else if (name.indexOf('2025') >= 0 && hasArtigo) {
-          parseVendas(json, 2025);
-          var chip3 = document.getElementById('chip-2025');
-          if (chip3) { chip3.className = 'file-chip ok'; chip3.textContent = 'Vendas 2025: ✓ ' + f.name; }
-        } else {
-          alert('Ficheiro não reconhecido.\n• Resumo: export Primavera com "Total Liq."\n• Detalhadas: export com linhas "Artigo:"');
-          return;
-        }
-        if (typeof renderVisao === 'function') renderVisao();
-        if (typeof renderTopsellers === 'function') renderTopsellers();
-        if (typeof renderComparativos === 'function') renderComparativos();
-        if (typeof renderLojas === 'function') renderLojas();
-        if (typeof gravarNoSupabase === 'function') {
-          gravarNoSupabase().then(function(ok) {
-            if (ok) {
-              var tip = document.getElementById('supabaseStatus');
-              if (tip) tip.textContent = '✓ Guardado no Supabase — visível para todos';
-            }
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Erro ao ler ficheiro: ' + (err && err.message ? err.message : err));
+  try {
+    const preparados = await Promise.all(lista.map(async function(f) {
+      const buffer = await f.arrayBuffer();
+      const wb = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+      let json = [];
+      wb.SheetNames.forEach(function(sn) {
+        json = json.concat(XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' }));
+      });
+
+      const nome = String(f.name || '').toLowerCase();
+      const temArtigo = json.some(function(r) {
+        return r && String(r[0] || '').trim().toLowerCase().indexOf('artigo') === 0;
+      });
+      const temTotalLiq = json.some(function(r) {
+        return r && String(r[0] || '').trim().toLowerCase().indexOf('total liq') >= 0;
+      });
+      const anoNome = nome.match(/20(25|26)/);
+      const ano = anoNome ? Number(anoNome[0]) : 2026;
+
+      return {
+        ficheiro: f,
+        nome: nome,
+        json: json,
+        temArtigo: temArtigo,
+        temTotalLiq: temTotalLiq,
+        ano: ano,
+        tipo: temArtigo ? 'detalhado' :
+          ((temTotalLiq || nome.indexOf('resumo') >= 0) ? 'resumo' : 'desconhecido')
+      };
+    }));
+
+    // Primeiro o detalhe de 2026, depois o opcional de 2025 e por fim o resumo,
+    // para o resumo ficar como fonte final dos totais mensais quando ambos são enviados.
+    preparados.sort(function(a, b) {
+      function ordem(x) {
+        if (x.tipo === 'detalhado' && x.ano === 2026) return 1;
+        if (x.tipo === 'detalhado' && x.ano === 2025) return 2;
+        if (x.tipo === 'resumo') return 3;
+        return 4;
       }
-    };
-    reader.readAsArrayBuffer(f);
-  });
+      return ordem(a) - ordem(b);
+    });
+
+    let lidos = 0;
+    const erros = [];
+
+    preparados.forEach(function(item) {
+      try {
+        if (item.tipo === 'detalhado') {
+          const ok = parseVendas(item.json, item.ano);
+          if (!ok) throw new Error('não foram encontradas linhas mensais válidas');
+          const id = item.ano === 2025 ? 'chip-2025' : 'chip-2026';
+          const chip = document.getElementById(id);
+          if (chip) {
+            chip.className = 'file-chip ok';
+            chip.textContent = (item.ano === 2025 ? 'Vendas 2025: ✓ ' : 'Vendas 2026: ✓ ') + item.ficheiro.name;
+          }
+        } else if (item.tipo === 'resumo') {
+          const ok = parseResumo(item.json);
+          if (!ok) throw new Error('não foram encontradas linhas Total + Mês + Total Líquido');
+          const chip = document.getElementById('chip-resumo');
+          if (chip) {
+            chip.className = 'file-chip ok';
+            chip.textContent = 'Resumo: ✓ ' + item.ficheiro.name;
+          }
+        } else {
+          throw new Error('formato não reconhecido');
+        }
+        lidos++;
+      } catch (err) {
+        erros.push(item.ficheiro.name + ': ' + (err.message || err));
+      }
+    });
+
+    if (!lidos) throw new Error(erros.join('\n') || 'Nenhum ficheiro reconhecido.');
+
+    renderVisao();
+    renderTopsellers();
+    renderComparativos();
+    renderLojas();
+
+    const gravado = await gravarNoSupabase();
+    if (status) {
+      status.textContent = gravado
+        ? '✓ Ficheiros lidos e dados guardados no Supabase — visíveis para todos'
+        : 'Ficheiros lidos, mas não foi possível guardar no Supabase. Verifique a mensagem de erro.';
+    }
+
+    if (erros.length) {
+      alert('Alguns ficheiros foram ignorados:\n\n' + erros.join('\n'));
+    }
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Erro ao ler os ficheiros. Consulte a mensagem apresentada.';
+    alert('Não foi possível carregar os dados:\n\n' + (err.message || err));
+  } finally {
+    if (fileInput) fileInput.value = '';
+  }
+}
+
+function numeroVenda(valor) {
+  if (valor == null || valor === '') return 0;
+  if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+
+  let s = String(valor).trim()
+    .replace(/\u00a0/g, '')
+    .replace(/\s/g, '')
+    .replace(/[^\d,.-]/g, '');
+
+  if (!s || s === '-' || s === '.' || s === ',') return 0;
+
+  const ultimaVirgula = s.lastIndexOf(',');
+  const ultimoPonto = s.lastIndexOf('.');
+  if (ultimaVirgula >= 0 && ultimoPonto >= 0) {
+    if (ultimaVirgula > ultimoPonto) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (ultimaVirgula >= 0) {
+    const casas = s.length - ultimaVirgula - 1;
+    s = casas === 1 || casas === 2
+      ? s.replace(/\./g, '').replace(',', '.')
+      : s.replace(/,/g, '');
+  } else if (ultimoPonto >= 0 && s.length - ultimoPonto - 1 >= 3) {
+    s = s.replace(/\./g, '');
+  }
+
+  const numero = Number(s);
+  return Number.isFinite(numero) ? numero : 0;
 }
 
 function parseResumo(rows) {
-  /* Aceita apenas formato Primavera:
-     [0]="Total"  [1]=NomeMês  [2]=Total Líquido
-     Ignora "Total Geral", cabeçalhos e linhas de detalhe. */
+  /* Resumo Primavera: [0]="Total" [1]=Mês [2]=Total Líquido. */
   const new26 = new Array(12).fill(0);
-  const n = function(x) {
-    if (x == null || x === '') return 0;
-    if (typeof x === 'number') return x;
-    let s = String(x).trim();
-    // 1.234,56 → 1234.56  |  1234.56 → 1234.56
-    if (/\d,\d{2}$/.test(s) && s.indexOf('.') >= 0) {
-      s = s.replace(/\./g, '').replace(',', '.');
-    } else if (/\d,\d{2}$/.test(s)) {
-      s = s.replace(',', '.');
-    } else {
-      s = s.replace(/[^\d.,-]/g, '').replace(',', '.');
-    }
-    return parseFloat(s) || 0;
-  };
   const mesIndex = function(txt) {
     const t = String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const nomes = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -1419,8 +1526,8 @@ function parseResumo(rows) {
     if (c0.toLowerCase() !== 'total') return;
     const idx = mesIndex(c1);
     if (idx < 0) return;
-    const val = n(r[2]);
-    if (val > 100) { // rejeitar lixo
+    const val = numeroVenda(r[2]);
+    if (Number.isFinite(val)) {
       new26[idx] = val;
       found++;
     }
@@ -1432,6 +1539,7 @@ function parseResumo(rows) {
   } else {
     console.warn('parseResumo: nenhum mês válido encontrado — dados 2026 mantidos');
   }
+  return found > 0;
 }
 
 function parseVendas(rows, year) {
@@ -1440,9 +1548,7 @@ function parseVendas(rows, year) {
   // buffer de linhas de loja até aparecer Total|Mês
   let bufferLojas = [];
 
-  const n = function(x) {
-    return parseFloat(String(x == null ? '' : x).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
-  };
+  const n = numeroVenda;
   const isMes = function(txt) {
     if (!txt || typeof MESES === 'undefined') return -1;
     const t = String(txt).toLowerCase();
@@ -1487,7 +1593,6 @@ function parseVendas(rows, year) {
       // colunas: [cod, , qtd, bruto, 'UN', desc, liquido, ...]
       const qtd = n(r[2]);
       let val = n(r[6]);
-      if (!val) val = n(r[5]);
       if (!val) val = n(r[3]); // fallback bruto
       bufferLojas.push({ loja: lojaNome, qtd: qtd, val: val });
       return;
@@ -1498,9 +1603,9 @@ function parseVendas(rows, year) {
       const mesIdx = isMes(c1);
       if (mesIdx >= 0 && currentArtigo && map[currentArtigo]) {
         const qtdTot = n(r[2]);
-        let valTot = n(r[5]);
-        if (!valTot) valTot = n(r[4]);
-        if (!valTot) valTot = n(r[6]);
+        let valTot = n(r[6]);
+        if (!valTot) valTot = n(r[3]);
+        if (!valTot) valTot = n(r[5]);
 
         map[currentArtigo].mensal[mesIdx] += valTot;
         map[currentArtigo].val += valTot;
@@ -1562,6 +1667,13 @@ function parseVendas(rows, year) {
     });
     produtos = novos;
     if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
+
+    const totaisMensais = new Array(12).fill(0);
+    arr.forEach(function(p) {
+      for (let i = 0; i < 12; i++) totaisMensais[i] += Number(p.mensal[i]) || 0;
+    });
+    data2026 = totaisMensais;
+    atualizarMatriz2026DeProdutos();
   } else {
     arr.forEach(function(p25) {
       const found = (produtos || []).find(function(p) {
@@ -1584,6 +1696,7 @@ function parseVendas(rows, year) {
     });
     if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
   }
+  return true;
 }
 
 (async function init() {
@@ -1593,6 +1706,7 @@ function parseVendas(rows, year) {
   renderVisao();
   if (typeof renderTopsellers === 'function') renderTopsellers();
   if (typeof renderComparativos === 'function') renderComparativos();
+  if (typeof renderLojas === 'function') renderLojas();
   if (ok) {
     console.log('Dashboard iniciado com dados do Supabase');
   }
