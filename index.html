@@ -690,43 +690,44 @@ const NOMES_ANIMAIS_AVES_FAMILIA_08 = new Set([
 
 function normalizarNomeAnimal(nome) {
   return String(nome == null ? "" : nome)
-    // Tratar espaços e caracteres que podem chegar codificados do ficheiro/API.
-    .replace(/&#x0*20;|&#0*32;|&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "e")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/<[^>]*>/g, " ")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 function isAnimalAveEspecifico(produtoOuNome) {
-  // Usa exclusivamente os 11 nomes autorizados na lista do utilizador.
+  // Lista fechada: apenas estes 11 artigos pertencem a ANIMAIS E AVES.
+  const nomesPermitidos = [
+    'pintos 2 semanas',
+    'frangas poedeiras pequenas',
+    'perus',
+    'patos',
+    'frangas poedeiras grande',
+    'fracas',
+    'galo grande',
+    'pintos 3 semanas',
+    'codornizes',
+    'frangas poedeiras grandes cores',
+    'frangas poedeiras araucana'
+  ];
+
   const campos = typeof produtoOuNome === 'object' && produtoOuNome !== null
-    ? [
-        produtoOuNome.nome,
-        produtoOuNome.descricao,
-        produtoOuNome.designacao,
-        produtoOuNome.artigoDescricao,
-        produtoOuNome.artigo,
-        produtoOuNome.descricaoArtigo,
-        produtoOuNome.designacaoArtigo,
-        produtoOuNome.produto
-      ]
+    ? [produtoOuNome.nome, produtoOuNome.descricao, produtoOuNome.designacao,
+       produtoOuNome.artigoDescricao, produtoOuNome.artigo, produtoOuNome.descricaoArtigo]
     : [produtoOuNome];
 
   return campos.some(function(campo) {
-    let nome = normalizarNomeAnimal(campo);
-    if (typeof limparNome === 'function') nome = normalizarNomeAnimal(limparNome(campo));
-    if (!nome) return false;
-
-    // Aceita o nome completo mesmo quando a exportação acrescenta código ou detalhe.
-    // A expressão exige limites entre palavras: não classifica por palavras soltas.
-    return Array.from(NOMES_ANIMAIS_AVES_FAMILIA_08).some(function(permitido) {
-      const alvo = normalizarNomeAnimal(permitido);
-      return nome === alvo || (' ' + nome + ' ').includes(' ' + alvo + ' ');
+    if (campo == null) return false;
+    const textoLimpo = typeof limparNome === 'function' ? limparNome(campo) : campo;
+    const texto = normalizarNomeAnimal(textoLimpo)
+      .replace(/[^\\p{L}\\p{N}]+/gu, ' ')
+      .replace(/\\s+/g, ' ')
+      .trim();
+    return nomesPermitidos.some(function(nome) {
+      const alvo = normalizarNomeAnimal(nome);
+      return texto === alvo || (' ' + texto + ' ').includes(' ' + alvo + ' ');
     });
   });
 }
