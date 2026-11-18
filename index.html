@@ -321,6 +321,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <select id="analiseProduto" onchange="renderAnaliseVendas()" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)"><option value="ALL">Todos os produtos</option></select></div>
       </div>
       <div id="analiseResumo" style="font-size:.8rem;color:var(--muted);margin-top:.85rem"></div>
+      <div id="analiseComparativo" style="margin-top:1rem"></div>
     </div>
     <div class="section-card">
       <div class="section-title">Evolução das vendas em valor (€)</div>
@@ -1914,9 +1915,42 @@ function renderAnaliseVendas() {
     (loja === 'ALL' ? 'Todas as lojas' : loja) + ' · ' +
     (familia === 'ALL' ? 'Todas as famílias' : familia + ' ' + FAMILIAS[familia]) + ' · ' +
     (subfamilia === 'ALL' ? 'Todas as subfamílias' : subfamilia) + ' · ' +
-    (produto === 'ALL' ? 'Todos os produtos' : (lista[0] ? limparNome(lista[0].nome) : produto)) +
-    ' · Total 2025: ' + fmtEur(total25) + ' · Total 2026: ' + fmtEur(total) +
-    ' · Quantidade 2025: ' + totalQtd25.toLocaleString('pt-PT') + ' · Quantidade 2026: ' + totalQtd.toLocaleString('pt-PT');
+    (produto === 'ALL' ? 'Todos os produtos' : (lista[0] ? limparNome(lista[0].nome) : produto));
+  const comparativo = document.getElementById('analiseComparativo');
+  if (comparativo) {
+    const meses25 = valores25.filter(function(v,i){return inicio+i<12;}).length;
+    const meses26 = valores26.filter(function(v,i){return inicio+i>=12;}).length;
+    function diferenca(a,b,moeda) {
+      const d=b-a;
+      const pct=a!==0 ? (d/a)*100 : null;
+      const sinal=d>0?'+':'';
+      return (moeda ? sinal+fmtEur(d) : sinal+Number(d).toLocaleString('pt-PT',{maximumFractionDigits:2})) +
+        ' <span style="color:var(--muted);font-size:.75rem">(' + (pct===null?'—':sinal+pct.toLocaleString('pt-PT',{maximumFractionDigits:1})+'%') + ')</span>';
+    }
+    comparativo.innerHTML =
+      '<div style="font-weight:600;font-size:.85rem;margin-bottom:.55rem">Comparativo do período selecionado</div>' +
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.8rem;text-align:right">' +
+      '<thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">' +
+      '<th style="text-align:left;padding:.55rem .45rem">Indicador</th>' +
+      '<th style="padding:.55rem .45rem;color:#f97316">2025</th>' +
+      '<th style="padding:.55rem .45rem;color:#22c55e">2026</th>' +
+      '<th style="padding:.55rem .45rem">Diferença 2026/2025</th></tr></thead><tbody>' +
+      '<tr style="border-bottom:1px solid var(--border)"><td style="text-align:left;padding:.6rem .45rem">Vendas (€)</td>' +
+      '<td style="padding:.6rem .45rem;white-space:nowrap">' + fmtEur(total25) + '</td>' +
+      '<td style="padding:.6rem .45rem;white-space:nowrap">' + fmtEur(total) + '</td>' +
+      '<td style="padding:.6rem .45rem;white-space:nowrap">' + diferenca(total25,total,true) + '</td></tr>' +
+      '<tr style="border-bottom:1px solid var(--border)"><td style="text-align:left;padding:.6rem .45rem">Quantidade (un.)</td>' +
+      '<td style="padding:.6rem .45rem;white-space:nowrap">' + totalQtd25.toLocaleString('pt-PT',{maximumFractionDigits:2}) + '</td>' +
+      '<td style="padding:.6rem .45rem;white-space:nowrap">' + totalQtd.toLocaleString('pt-PT',{maximumFractionDigits:2}) + '</td>' +
+      '<td style="padding:.6rem .45rem;white-space:nowrap">' + diferenca(totalQtd25,totalQtd,false) + '</td></tr>' +
+      '<tr><td style="text-align:left;padding:.6rem .45rem;color:var(--muted)">Meses incluídos</td>' +
+      '<td style="padding:.6rem .45rem;color:var(--muted)">' + meses25 + '</td>' +
+      '<td style="padding:.6rem .45rem;color:var(--muted)">' + meses26 + '</td><td style="padding:.6rem .45rem;color:var(--muted)">—</td></tr>' +
+      '</tbody></table></div>' +
+      '<div style="font-size:.74rem;color:var(--muted);margin-top:.65rem;line-height:1.5">' +
+      '<span style="color:#f97316">■</span> Barras laranja: 2025 &nbsp; <span style="color:#22c55e">■</span> Barras verdes: 2026 &nbsp; <span style="color:#facc15">━</span> Linha amarela: evolução mensal de 2026. ' +
+      'A diferença compara os totais dos meses selecionados; se o número de meses for diferente, tenha isso em conta na leitura.</div>';
+  }
   function desenhar(ref, tipo, series) {
     if (ref === 'valor' && chartAnaliseValor) chartAnaliseValor.destroy();
     if (ref === 'qtd' && chartAnaliseQtd) chartAnaliseQtd.destroy();
