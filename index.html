@@ -329,7 +329,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="section-card">
       <div class="section-title">Evolução das vendas em quantidade (unidades)</div>
       <div class="chart-wrap" style="height:360px"><canvas id="chartAnaliseQtd"></canvas></div>
-      <p style="font-size:.72rem;color:var(--muted);margin-top:.55rem">A evolução em quantidade depende das quantidades mensais presentes no ficheiro detalhado de vendas.</p>
+      <p id="analiseQtdAviso" style="font-size:.78rem;color:var(--muted);margin-top:.55rem">A evolução em quantidade depende das quantidades mensais presentes no ficheiro detalhado de vendas.</p>
     </div>
   </div>
 
@@ -1882,8 +1882,13 @@ function renderAnaliseVendas() {
       let dados = loja === 'ALL' ? p : ((p.porLoja || {})[loja] || {});
       const mv26 = loja === 'ALL' ? p.mensal2026 : dados.mensal;
       const mv25 = loja === 'ALL' ? p.mensal2025 : null;
-      const mq26 = loja === 'ALL' ? p.mensalQtd2026 : dados.mensalQtd;
-      const mq25 = loja === 'ALL' ? p.mensalQtd2025 : null;
+      // Compatibilidade com registos antigos que guardavam a quantidade mensal com outro nome.
+      const mq26 = loja === 'ALL'
+        ? (Array.isArray(p.mensalQtd2026) ? p.mensalQtd2026 : p.mensalQtd)
+        : dados.mensalQtd;
+      const mq25 = loja === 'ALL'
+        ? (Array.isArray(p.mensalQtd2025) ? p.mensalQtd2025 : null)
+        : null;
       v26 += Number(mv26 && mv26[i]) || 0;
       v25 += Number(mv25 && mv25[i]) || 0;
       q26 += Number(mq26 && mq26[i]) || 0;
@@ -1893,6 +1898,13 @@ function renderAnaliseVendas() {
   }
   const total = valores26.reduce(function(a,b){return a+b;},0);
   const totalQtd = qtd26.reduce(function(a,b){return a+b;},0);
+  const avisoQtd = document.getElementById('analiseQtdAviso');
+  if (avisoQtd) {
+    avisoQtd.textContent = totalQtd > 0
+      ? 'Quantidade mensal carregada para 2026. Para comparar 2025, carregue também o ficheiro detalhado desse ano.'
+      : 'Sem quantidades mensais neste conjunto de dados. Volte a carregar o ficheiro detalhado de vendas de 2026 para preencher este gráfico.';
+    avisoQtd.style.color = totalQtd > 0 ? 'var(--muted)' : '#fbbf24';
+  }
   const resumo = document.getElementById('analiseResumo');
   if (resumo) resumo.textContent = MESES[inicio] + ' a ' + MESES[fim] + ' · ' +
     (loja === 'ALL' ? 'Todas as lojas' : loja) + ' · ' +
@@ -1916,7 +1928,7 @@ function renderAnaliseVendas() {
         ctx.textBaseline='bottom';
         chart.data.datasets.forEach(function(ds,di) {
           const meta=chart.getDatasetMeta(di);
-          if (meta.hidden) return;
+          if (meta.hidden || ds.type === 'line') return;
           meta.data.forEach(function(bar,i) {
             const valor=Number(ds.data[i])||0;
             if (!valor) return;
@@ -1944,8 +1956,9 @@ function renderAnaliseVendas() {
     });
   }
   chartAnaliseValor = desenhar('valor','valor',[
-    {label:'2026 · Valor',data:valores26,backgroundColor:'rgba(34,197,94,.82)',borderColor:'#22c55e',borderWidth:1},
-    {label:'2025 · Valor',data:valores25,backgroundColor:'rgba(249,115,22,.78)',borderColor:'#f97316',borderWidth:1,hidden:loja!=='ALL'}
+    {label:'2026 · Valor',data:valores26,backgroundColor:'rgba(34,197,94,.78)',borderColor:'#22c55e',borderWidth:1,borderRadius:5,order:2},
+    {label:'2025 · Valor',data:valores25,backgroundColor:'rgba(249,115,22,.72)',borderColor:'#f97316',borderWidth:1,borderRadius:5,hidden:loja!=='ALL',order:2},
+    {type:'line',label:'Evolução 2026',data:valores26,borderColor:'#facc15',backgroundColor:'#facc15',borderWidth:3,tension:.38,fill:false,pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'#facc15',pointBorderColor:'#17251c',pointBorderWidth:2,order:1}
   ]);
   chartAnaliseQtd = desenhar('qtd','qtd',[
     {label:'2026 · Quantidade',data:qtd26,backgroundColor:'rgba(34,197,94,.82)',borderColor:'#22c55e',borderWidth:1},
