@@ -698,32 +698,32 @@ function normalizarNomeAnimal(nome) {
 }
 
 function isAnimalAveEspecifico(produtoOuNome) {
-  // Os dados podem trazer texto adicional antes/depois do nome do artigo.
-  // Procuramos os 11 nomes como expressões completas dentro da descrição normalizada.
+  // Os artigos do ficheiro de vendas têm pequenas diferenças de escrita:
+  // por exemplo, "PINTOS de 3 semanas" e "FRANGAS POEDEIRAS".
+  // Normalizamos a descrição e classificamos pelo início do nome do artigo.
   const campos = typeof produtoOuNome === 'object' && produtoOuNome !== null
     ? [produtoOuNome.nome, produtoOuNome.descricao, produtoOuNome.designacao, produtoOuNome.artigoDescricao]
     : [produtoOuNome];
 
+  const regras = [
+    /^pintos\s+(?:de\s+)?2\s+semanas?(?:\s|$)/,
+    /^frangas\s+poedeiras(?:\s|$)/,
+    /^perus?(?:\s|$)/,
+    /^patos?(?:\s|$)/,
+    /^fracas?(?:\s|$)/,
+    /^galos?\s+grandes?(?:\s|$)/,
+    /^pintos\s+(?:de\s+)?3\s+semanas?(?:\s|$)/,
+    /^codorniz(?:es)?(?:\s|$)/
+  ];
+
   return campos.some(function(campo) {
-    const texto = ' ' + normalizarNomeAnimal(campo)
+    const texto = normalizarNomeAnimal(campo)
       .replace(/[^\p{L}\p{N}]+/gu, ' ')
       .replace(/\s+/g, ' ')
-      .trim() + ' ';
+      .trim();
 
-    return Array.from(NOMES_ANIMAIS_AVES_FAMILIA_08).some(function(nome) {
-      const nomeNormalizado = normalizarNomeAnimal(nome)
-        .replace(/[^\p{L}\p{N}]+/gu, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      const termo = ' ' + nomeNormalizado + ' ';
-
-      // Nomes de uma palavra (Perus, Patos, Fracas, Codornizes) só identificam
-      // o artigo quando aparecem no início do nome, não em "ração para perus".
-      if (!nomeNormalizado.includes(' ')) {
-        return texto.startsWith(termo);
-      }
-      // Nomes compostos podem surgir com marca, tamanho ou complemento antes/depois.
-      return texto.includes(termo);
+    return regras.some(function(regra) {
+      return regra.test(texto);
     });
   });
 }
