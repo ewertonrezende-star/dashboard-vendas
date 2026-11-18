@@ -698,51 +698,18 @@ function normalizarNomeAnimal(nome) {
 }
 
 function isAnimalAveEspecifico(produtoOuNome) {
-  // Classificação por código Primavera: estes 12 artigos pertencem a ANIMAIS E AVES.
+  // Classificação exclusivamente pelos 12 códigos Primavera fornecidos.
+  // Não usar descrição/nome: palavras como "patos" ou "perus" também aparecem em rações.
   const codigosPermitidos = new Set([
     '82500001', '82500002', '82500003', '82500004',
     '82500005', '82500006', '82500007', '82500011',
     '82500012', '82500014', '82500015', '82500019'
   ]);
 
-  if (produtoOuNome && typeof produtoOuNome === 'object') {
-    const codigo = String(produtoOuNome.codigo == null ? '' : produtoOuNome.codigo).replace(/\D/g, '');
-    if (codigosPermitidos.has(codigo)) return true;
-  }
-
-  const nomesPermitidos = [
-    'pintos 2 semanas',
-    'frangas poedeiras pequenas',
-    'perus',
-    'patos',
-    'frangas poedeiras grande',
-    'fracas',
-    'galo grande',
-    'pintos 3 semanas',
-    'codornizes',
-    'frangas poedeiras grandes cores',
-    'frangas poedeiras araucana'
-  ];
-
-  const campos = typeof produtoOuNome === 'object' && produtoOuNome !== null
-    ? [produtoOuNome.nome, produtoOuNome.descricao, produtoOuNome.designacao,
-       produtoOuNome.artigoDescricao, produtoOuNome.artigo, produtoOuNome.descricaoArtigo]
-    : [produtoOuNome];
-
-  return campos.some(function(campo) {
-    if (campo == null) return false;
-    const textoLimpo = typeof limparNome === 'function' ? limparNome(campo) : campo;
-    const texto = normalizarNomeAnimal(textoLimpo)
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .replace(/\\s+/g, ' ')
-      .trim();
-    return nomesPermitidos.some(function(nome) {
-      const alvo = normalizarNomeAnimal(nome);
-      return texto === alvo || (' ' + texto + ' ').includes(' ' + alvo + ' ');
-    });
-  });
+  if (!produtoOuNome || typeof produtoOuNome !== 'object') return false;
+  const codigo = String(produtoOuNome.codigo == null ? '' : produtoOuNome.codigo).replace(/\D/g, '');
+  return codigosPermitidos.has(codigo);
 }
-
 function getSubfamilia(p) {
   if (!p) return '';
   const raw = p.codigo == null ? '' : String(p.codigo).trim();
