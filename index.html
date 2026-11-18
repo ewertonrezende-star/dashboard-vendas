@@ -706,14 +706,18 @@ function isAnimalAveEspecifico(produtoOuNome) {
     : [produtoOuNome];
 
   const regras = [
-    /^pintos\s+(?:de\s+)?2\s+semanas?(?:\s|$)/,
-    /^frangas\s+poedeiras(?:$|\s+(?:pequenas?|grandes?(?:\s+cores)?|araucana)(?:\s|$))/,
-    /^perus?(?:\s|$)/,
-    /^patos?(?:\s|$)/,
-    /^fracas?(?:\s|$)/,
-    /^galos?\s+grandes?(?:\s|$)/,
-    /^pintos\s+(?:de\s+)?3\s+semanas?(?:\s|$)/,
-    /^codorniz(?:es)?(?:\s|$)/
+    /^pintos\s+(?:de\s+)?2\s+semanas?(?:\s+\d|$)/,
+    /^frangas\s+poedeiras$/,
+    /^frangas\s+poedeiras\s+pequenas?(?:\s+\d|$)/,
+    /^frangas\s+poedeiras\s+grandes?\s+cores(?:\s+\d|$)/,
+    /^frangas\s+poedeiras\s+grandes?(?:\s+\d|$)/,
+    /^frangas\s+poedeiras\s+araucana(?:\s+\d|$)/,
+    /^perus?(?:\s+\d|$)/,
+    /^patos?(?:\s+\d|$)/,
+    /^fracas?(?:\s+\d|$)/,
+    /^galos?\s+grandes?(?:\s+\d|$)/,
+    /^pintos\s+(?:de\s+)?3\s+semanas?(?:\s+\d|$)/,
+    /^codorniz(?:es)?(?:\s+\d|$)/
   ];
 
   return campos.some(function(campo) {
