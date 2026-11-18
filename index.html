@@ -166,6 +166,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
       <span>Topsellers / Famílias</span>
     </div>
+    <div class="nav-item" data-view="analise" onclick="showView('analise')">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18M7 14l4-4 4 4 6-7"/></svg>
+      <span>Análise de Vendas</span>
+    </div>
     <div class="nav-item" data-view="comparativos" onclick="showView('comparativos')">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       <span>Comparativos</span>
@@ -293,6 +297,45 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="section-title">📦 Top 15 por Quantidade</div>
         <ul class="rank-list" id="rankVolume"></ul>
       </div>
+    </div>
+  </div>
+
+  <!-- ANÁLISE DE VENDAS -->
+  <div id="view-analise" class="view">
+    <div class="header-bar">
+      <div>
+        <h2>Análise de Vendas</h2>
+        <div class="subtitle">Evolução mensal em valor e quantidade · filtros por período, artigo, família, subfamília e loja</div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Filtros da análise</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:.8rem">
+        <div><label for="analiseMesInicio" style="display:block;font-size:.75rem;color:var(--muted);margin-bottom:.35rem">Mês inicial</label>
+          <select id="analiseMesInicio" onchange="renderAnaliseVendas()" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)"></select></div>
+        <div><label for="analiseMesFim" style="display:block;font-size:.75rem;color:var(--muted);margin-bottom:.35rem">Mês final</label>
+          <select id="analiseMesFim" onchange="renderAnaliseVendas()" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)"></select></div>
+        <div><label for="analiseLoja" style="display:block;font-size:.75rem;color:var(--muted);margin-bottom:.35rem">Loja</label>
+          <select id="analiseLoja" onchange="renderAnaliseVendas()" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)">
+            <option value="ALL">Todas as lojas</option><option>Sintra</option><option>Colares</option><option>Albarraque</option><option>Arneiro</option><option>Mem Martins</option><option>Sabugo</option>
+          </select></div>
+        <div><label for="analiseFamilia" style="display:block;font-size:.75rem;color:var(--muted);margin-bottom:.35rem">Família</label>
+          <select id="analiseFamilia" onchange="atualizarFiltrosAnalise('familia')" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)"><option value="ALL">Todas as famílias</option></select></div>
+        <div><label for="analiseSubfamilia" style="display:block;font-size:.75rem;color:var(--muted);margin-bottom:.35rem">Subfamília</label>
+          <select id="analiseSubfamilia" onchange="atualizarFiltrosAnalise('subfamilia')" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)"><option value="ALL">Todas as subfamílias</option></select></div>
+        <div><label for="analiseProduto" style="display:block;font-size:.75rem;color:var(--muted);margin-bottom:.35rem">Produto / Artigo</label>
+          <select id="analiseProduto" onchange="renderAnaliseVendas()" style="width:100%;padding:.55rem;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text)"><option value="ALL">Todos os produtos</option></select></div>
+      </div>
+      <div id="analiseResumo" style="font-size:.8rem;color:var(--muted);margin-top:.85rem"></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Evolução das vendas em valor (€)</div>
+      <div class="chart-wrap"><canvas id="chartAnaliseValor"></canvas></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">Evolução das vendas em quantidade (unidades)</div>
+      <div class="chart-wrap"><canvas id="chartAnaliseQtd"></canvas></div>
+      <p style="font-size:.72rem;color:var(--muted);margin-top:.55rem">A evolução em quantidade depende das quantidades mensais presentes no ficheiro detalhado de vendas.</p>
     </div>
   </div>
 
@@ -861,6 +904,7 @@ let produtos = [
 let familiaAtual = 'ALL';
 let lojaAtual = 'ALL';
 let chartMensal=null, chartProduto=null, chartComp=null, chartFamilias=null, chartLojas=null, chartLojaMes=null, chartAnual=null;
+let chartAnaliseValor=null, chartAnaliseQtd=null;
 
 const fmtEur = v => new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v||0);
 const fmtPct = v => (v>=0?'+':'')+(v||0).toFixed(1)+'%';
@@ -881,6 +925,7 @@ function showView(name) {
   if(name==='visao') renderVisao();
   if(name==='topsellers') renderTopsellers();
   if(name==='comparativos') renderComparativos();
+  if(name==='analise') { prepararFiltrosAnalise(); renderAnaliseVendas(); }
   if(name==='lojas') renderLojas();
 }
 
@@ -1638,7 +1683,7 @@ function parseVendas(rows, year) {
         map[currentArtigo] = {
           nome: currentNome, codigo: currentArtigo,
           qtd: 0, val: 0, mensal: new Array(12).fill(0),
-          porLoja: {}
+          mensalQtd: new Array(12).fill(0), porLoja: {}
         };
       }
       return;
@@ -1670,6 +1715,7 @@ function parseVendas(rows, year) {
         const valTot = numeroDaLinha(r, [5, 4, 6, 3]);
 
         map[currentArtigo].mensal[mesIdx] += valTot;
+        map[currentArtigo].mensalQtd[mesIdx] += qtdTot;
         map[currentArtigo].val += valTot;
         map[currentArtigo].qtd += qtdTot;
 
@@ -1678,13 +1724,15 @@ function parseVendas(rows, year) {
           bufferLojas.forEach(function(b) {
             if (!map[currentArtigo].porLoja[b.loja]) {
               map[currentArtigo].porLoja[b.loja] = {
-                qtd: 0, val: 0, mensal: new Array(12).fill(0)
+                qtd: 0, val: 0, mensal: new Array(12).fill(0),
+                mensalQtd: new Array(12).fill(0)
               };
             }
             const pl = map[currentArtigo].porLoja[b.loja];
             pl.qtd += b.qtd;
             pl.val += b.val;
             pl.mensal[mesIdx] += b.val;
+            pl.mensalQtd[mesIdx] += b.qtd;
           });
         }
         bufferLojas = [];
@@ -1714,6 +1762,7 @@ function parseVendas(rows, year) {
         qtd2026: p.qtd, val2026: p.val,
         qtd2025: 0, val2025: 0,
         mensal2026: p.mensal, mensal2025: new Array(12).fill(0),
+        mensalQtd2026: p.mensalQtd, mensalQtd2025: new Array(12).fill(0),
         porLoja: p.porLoja || {}
       };
     });
@@ -1725,6 +1774,7 @@ function parseVendas(rows, year) {
         m.qtd2025 = ex.qtd2025 || 0;
         m.val2025 = ex.val2025 || 0;
         m.mensal2025 = ex.mensal2025 || new Array(12).fill(0);
+        m.mensalQtd2025 = ex.mensalQtd2025 || new Array(12).fill(0);
       }
     });
     produtos = novos;
@@ -1745,6 +1795,7 @@ function parseVendas(rows, year) {
         found.qtd2025 = p25.qtd;
         found.val2025 = p25.val;
         found.mensal2025 = p25.mensal;
+        found.mensalQtd2025 = p25.mensalQtd;
       } else {
         let fam = typeof familiaFromCodigo === 'function' ? familiaFromCodigo(p25.codigo) : '08';
         if (typeof isServico === 'function' && isServico(p25.nome)) fam = '09';
@@ -1752,6 +1803,7 @@ function parseVendas(rows, year) {
           nome: p25.nome, codigo: p25.codigo, familia: fam,
           qtd2026: 0, val2026: 0, qtd2025: p25.qtd, val2025: p25.val,
           mensal2026: new Array(12).fill(0), mensal2025: p25.mensal,
+          mensalQtd2026: new Array(12).fill(0), mensalQtd2025: p25.mensalQtd,
           porLoja: {}
         });
       }
@@ -1759,6 +1811,124 @@ function parseVendas(rows, year) {
     if (typeof reaplicarFamilias === 'function') reaplicarFamilias();
   }
   return true;
+}
+
+
+function prepararFiltrosAnalise() {
+  const inicio = document.getElementById('analiseMesInicio');
+  const fim = document.getElementById('analiseMesFim');
+  if (!inicio || !fim) return;
+  if (!inicio.options.length) {
+    MESES.forEach(function(m, i) {
+      inicio.add(new Option(m, String(i)));
+      fim.add(new Option(m, String(i)));
+    });
+    inicio.value = '0';
+    const ultimo = Math.max(0, (data2026 || []).reduce(function(last, v, i) { return (Number(v) || 0) > 0 ? i : last; }, 0));
+    fim.value = String(ultimo);
+  }
+  const famSel = document.getElementById('analiseFamilia');
+  if (famSel && famSel.options.length <= 1) {
+    Object.keys(FAMILIAS).sort().forEach(function(cod) {
+      famSel.add(new Option(cod + ' · ' + FAMILIAS[cod], cod));
+    });
+  }
+  atualizarFiltrosAnalise('init');
+}
+function atualizarFiltrosAnalise(origem) {
+  const fam = document.getElementById('analiseFamilia');
+  const sub = document.getElementById('analiseSubfamilia');
+  const prod = document.getElementById('analiseProduto');
+  if (!fam || !sub || !prod) return;
+  const familia = fam.value || 'ALL';
+  const subAnterior = sub.value || 'ALL';
+  const produtoAnterior = prod.value || 'ALL';
+  const base = (produtos || []).filter(function(p) {
+    return familia === 'ALL' || getFamilia(p) === familia;
+  });
+  const subs = Array.from(new Set(base.map(function(p) { return getSubfamilia(p); }).filter(Boolean))).sort(function(a,b){return a.localeCompare(b,'pt');});
+  sub.innerHTML = '<option value="ALL">Todas as subfamílias</option>';
+  subs.forEach(function(s) { sub.add(new Option(s, s)); });
+  if (origem !== 'familia' && subs.indexOf(subAnterior) >= 0) sub.value = subAnterior;
+  const subEscolhida = sub.value || 'ALL';
+  const produtosFiltrados = base.filter(function(p) {
+    return subEscolhida === 'ALL' || getSubfamilia(p) === subEscolhida;
+  }).sort(function(a,b){return String(a.nome||'').localeCompare(String(b.nome||''),'pt');});
+  prod.innerHTML = '<option value="ALL">Todos os produtos</option>';
+  produtosFiltrados.forEach(function(p) {
+    prod.add(new Option((p.codigo ? p.codigo + ' · ' : '') + limparNome(p.nome), p.codigo || p.nome));
+  });
+  if (origem !== 'familia' && origem !== 'subfamilia' && Array.from(prod.options).some(function(o){return o.value===produtoAnterior;})) prod.value = produtoAnterior;
+  renderAnaliseVendas();
+}
+function renderAnaliseVendas() {
+  const inicioEl = document.getElementById('analiseMesInicio');
+  const fimEl = document.getElementById('analiseMesFim');
+  if (!inicioEl || !fimEl) return;
+  let inicio = Number(inicioEl.value || 0), fim = Number(fimEl.value || 11);
+  if (inicio > fim) { const t=inicio; inicio=fim; fim=t; inicioEl.value=String(inicio); fimEl.value=String(fim); }
+  const loja = (document.getElementById('analiseLoja') || {}).value || 'ALL';
+  const familia = (document.getElementById('analiseFamilia') || {}).value || 'ALL';
+  const subfamilia = (document.getElementById('analiseSubfamilia') || {}).value || 'ALL';
+  const produto = (document.getElementById('analiseProduto') || {}).value || 'ALL';
+  let lista = (produtos || []).filter(function(p) {
+    if (familia !== 'ALL' && getFamilia(p) !== familia) return false;
+    if (subfamilia !== 'ALL' && getSubfamilia(p) !== subfamilia) return false;
+    if (produto !== 'ALL' && String(p.codigo || p.nome) !== produto) return false;
+    return !excluirDoTop(p);
+  });
+  const meses = [];
+  const valores26=[], valores25=[], qtd26=[], qtd25=[];
+  for (let i=inicio;i<=fim;i++) {
+    meses.push(MESES_ABREV[i]);
+    let v26=0,v25=0,q26=0,q25=0;
+    lista.forEach(function(p) {
+      let dados = loja === 'ALL' ? p : ((p.porLoja || {})[loja] || {});
+      const mv26 = loja === 'ALL' ? p.mensal2026 : dados.mensal;
+      const mv25 = loja === 'ALL' ? p.mensal2025 : null;
+      const mq26 = loja === 'ALL' ? p.mensalQtd2026 : dados.mensalQtd;
+      const mq25 = loja === 'ALL' ? p.mensalQtd2025 : null;
+      v26 += Number(mv26 && mv26[i]) || 0;
+      v25 += Number(mv25 && mv25[i]) || 0;
+      q26 += Number(mq26 && mq26[i]) || 0;
+      q25 += Number(mq25 && mq25[i]) || 0;
+    });
+    valores26.push(v26); valores25.push(v25); qtd26.push(q26); qtd25.push(q25);
+  }
+  const total = valores26.reduce(function(a,b){return a+b;},0);
+  const totalQtd = qtd26.reduce(function(a,b){return a+b;},0);
+  const resumo = document.getElementById('analiseResumo');
+  if (resumo) resumo.textContent = MESES[inicio] + ' a ' + MESES[fim] + ' · ' +
+    (loja === 'ALL' ? 'Todas as lojas' : loja) + ' · ' +
+    (familia === 'ALL' ? 'Todas as famílias' : familia + ' ' + FAMILIAS[familia]) + ' · ' +
+    (subfamilia === 'ALL' ? 'Todas as subfamílias' : subfamilia) + ' · ' +
+    (produto === 'ALL' ? 'Todos os produtos' : (lista[0] ? limparNome(lista[0].nome) : produto)) +
+    ' · Total 2026: ' + fmtEur(total) + ' · Quantidade 2026: ' + totalQtd.toLocaleString('pt-PT');
+  function desenhar(ref, tipo, series) {
+    if (ref === 'valor' && chartAnaliseValor) chartAnaliseValor.destroy();
+    if (ref === 'qtd' && chartAnaliseQtd) chartAnaliseQtd.destroy();
+    const canvas = document.getElementById(ref === 'valor' ? 'chartAnaliseValor' : 'chartAnaliseQtd');
+    if (!canvas) return null;
+    return new Chart(canvas.getContext('2d'), {
+      type:'line',
+      data:{labels:meses,datasets:series},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{labels:{color:'#8ba894'}},tooltip:{callbacks:{label:function(ctx){
+          return ctx.dataset.label + ': ' + (tipo==='valor' ? fmtEur(ctx.raw) : Number(ctx.raw||0).toLocaleString('pt-PT') + ' un');
+        }}}},
+        scales:{x:{ticks:{color:'#8ba894'},grid:{color:'rgba(255,255,255,.04)'}},
+          y:{beginAtZero:true,ticks:{color:'#8ba894',callback:function(v){return tipo==='valor'?(v/1000)+'k':Number(v).toLocaleString('pt-PT');}},grid:{color:'rgba(255,255,255,.04)'}}}
+      }
+    });
+  }
+  chartAnaliseValor = desenhar('valor','valor',[
+    {label:'2026 · Valor',data:valores26,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.3},
+    {label:'2025 · Valor',data:valores25,borderColor:'#f97316',backgroundColor:'transparent',borderDash:[6,4],tension:.3}
+  ]);
+  chartAnaliseQtd = desenhar('qtd','qtd',[
+    {label:'2026 · Quantidade',data:qtd26,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.12)',fill:true,tension:.3},
+    {label:'2025 · Quantidade',data:qtd25,borderColor:'#f97316',backgroundColor:'transparent',borderDash:[6,4],tension:.3}
+  ]);
 }
 
 (async function init() {
