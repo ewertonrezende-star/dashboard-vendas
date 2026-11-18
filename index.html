@@ -1815,13 +1815,17 @@ function prepararFiltrosAnalise() {
   const fim = document.getElementById('analiseMesFim');
   if (!inicio || !fim) return;
   if (!inicio.options.length) {
-    MESES.forEach(function(m, i) {
-      inicio.add(new Option(m, String(i)));
-      fim.add(new Option(m, String(i)));
+    [2025, 2026].forEach(function(ano, anoIdx) {
+      MESES.forEach(function(m, i) {
+        const valor = String(anoIdx * 12 + i);
+        const rotulo = m + ' ' + ano;
+        inicio.add(new Option(rotulo, valor));
+        fim.add(new Option(rotulo, valor));
+      });
     });
     inicio.value = '0';
     const ultimo = Math.max(0, (data2026 || []).reduce(function(last, v, i) { return (Number(v) || 0) > 0 ? i : last; }, 0));
-    fim.value = String(ultimo);
+    fim.value = String(12 + ultimo);
   }
   const famSel = document.getElementById('analiseFamilia');
   if (famSel && famSel.options.length <= 1) {
@@ -1861,7 +1865,7 @@ function renderAnaliseVendas() {
   const inicioEl = document.getElementById('analiseMesInicio');
   const fimEl = document.getElementById('analiseMesFim');
   if (!inicioEl || !fimEl) return;
-  let inicio = Number(inicioEl.value || 0), fim = Number(fimEl.value || 11);
+  let inicio = Number(inicioEl.value || 0), fim = Number(fimEl.value || 23);
   if (inicio > fim) { const t=inicio; inicio=fim; fim=t; inicioEl.value=String(inicio); fimEl.value=String(fim); }
   const loja = (document.getElementById('analiseLoja') || {}).value || 'ALL';
   const familia = (document.getElementById('analiseFamilia') || {}).value || 'ALL';
@@ -1875,29 +1879,29 @@ function renderAnaliseVendas() {
   });
   const meses = [];
   const valores26=[], valores25=[], qtd26=[], qtd25=[];
-  for (let i=inicio;i<=fim;i++) {
-    meses.push(MESES_ABREV[i]);
+  for (let periodo=inicio;periodo<=fim;periodo++) {
+    const ano = periodo < 12 ? 2025 : 2026;
+    const mes = periodo % 12;
+    meses.push(MESES_ABREV[mes] + ' ' + ano);
     let v26=0,v25=0,q26=0,q25=0;
     lista.forEach(function(p) {
       let dados = loja === 'ALL' ? p : ((p.porLoja || {})[loja] || {});
-      const mv26 = loja === 'ALL' ? p.mensal2026 : dados.mensal;
-      const mv25 = loja === 'ALL' ? p.mensal2025 : null;
+      const mv = ano === 2025 ? (loja === 'ALL' ? p.mensal2025 : null) : (loja === 'ALL' ? p.mensal2026 : dados.mensal);
       // Compatibilidade com registos antigos que guardavam a quantidade mensal com outro nome.
-      const mq26 = loja === 'ALL'
-        ? (Array.isArray(p.mensalQtd2026) ? p.mensalQtd2026 : p.mensalQtd)
-        : dados.mensalQtd;
-      const mq25 = loja === 'ALL'
-        ? (Array.isArray(p.mensalQtd2025) ? p.mensalQtd2025 : null)
-        : null;
-      v26 += Number(mv26 && mv26[i]) || 0;
-      v25 += Number(mv25 && mv25[i]) || 0;
-      q26 += Number(mq26 && mq26[i]) || 0;
-      q25 += Number(mq25 && mq25[i]) || 0;
+      const mq = ano === 2025
+        ? (loja === 'ALL' && Array.isArray(p.mensalQtd2025) ? p.mensalQtd2025 : null)
+        : (loja === 'ALL' ? (Array.isArray(p.mensalQtd2026) ? p.mensalQtd2026 : p.mensalQtd) : dados.mensalQtd);
+      const valor = Number(mv && mv[mes]) || 0;
+      const quantidade = Number(mq && mq[mes]) || 0;
+      if (ano === 2025) { v25 += valor; q25 += quantidade; }
+      else { v26 += valor; q26 += quantidade; }
     });
     valores26.push(v26); valores25.push(v25); qtd26.push(q26); qtd25.push(q25);
   }
   const total = valores26.reduce(function(a,b){return a+b;},0);
+  const total25 = valores25.reduce(function(a,b){return a+b;},0);
   const totalQtd = qtd26.reduce(function(a,b){return a+b;},0);
+  const totalQtd25 = qtd25.reduce(function(a,b){return a+b;},0);
   const avisoQtd = document.getElementById('analiseQtdAviso');
   if (avisoQtd) {
     avisoQtd.textContent = totalQtd > 0
@@ -1906,12 +1910,13 @@ function renderAnaliseVendas() {
     avisoQtd.style.color = totalQtd > 0 ? 'var(--muted)' : '#fbbf24';
   }
   const resumo = document.getElementById('analiseResumo');
-  if (resumo) resumo.textContent = MESES[inicio] + ' a ' + MESES[fim] + ' · ' +
+  if (resumo) resumo.textContent = MESES[inicio % 12] + ' ' + (inicio < 12 ? '2025' : '2026') + ' a ' + MESES[fim % 12] + ' ' + (fim < 12 ? '2025' : '2026') + ' · ' +
     (loja === 'ALL' ? 'Todas as lojas' : loja) + ' · ' +
     (familia === 'ALL' ? 'Todas as famílias' : familia + ' ' + FAMILIAS[familia]) + ' · ' +
     (subfamilia === 'ALL' ? 'Todas as subfamílias' : subfamilia) + ' · ' +
     (produto === 'ALL' ? 'Todos os produtos' : (lista[0] ? limparNome(lista[0].nome) : produto)) +
-    ' · Total 2026: ' + fmtEur(total) + ' · Quantidade 2026: ' + totalQtd.toLocaleString('pt-PT');
+    ' · Total 2025: ' + fmtEur(total25) + ' · Total 2026: ' + fmtEur(total) +
+    ' · Quantidade 2025: ' + totalQtd25.toLocaleString('pt-PT') + ' · Quantidade 2026: ' + totalQtd.toLocaleString('pt-PT');
   function desenhar(ref, tipo, series) {
     if (ref === 'valor' && chartAnaliseValor) chartAnaliseValor.destroy();
     if (ref === 'qtd' && chartAnaliseQtd) chartAnaliseQtd.destroy();
