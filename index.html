@@ -674,23 +674,31 @@ function isServico(nome) {
   return SERVICO_KEYWORDS.some(kw => n.includes(kw));
 }
 
-const PREFIXOS_ANIMAIS_AVES_FAMILIA_08 = ["811", "821", "825", "835", "836"];
-const CODIGOS_ANIMAIS_AVES_FAMILIA_08 = new Set([
-  "81202029", "81202119", "81203231",
-  "81301044", "81301083", "81301090", "81301108", "81301109",
-  "81301110", "81301112", "81301113", "81301141", "81302064", "81302095",
-  "81500289",
-  "81701051",
-  "82000070", "82000071", "82000072", "82000073", "82000074", "82000075",
-  "82000076", "82000081", "82000113", "82000114", "82000195", "82000196",
-  "82000646", "82000661", "82000722",
-  "83133186", "83133188", "83137019"
+const NOMES_ANIMAIS_AVES_FAMILIA_08 = new Set([
+  "pintos 2 semanas",
+  "frangas poedeiras pequenas",
+  "perus",
+  "patos",
+  "frangas poedeiras grande",
+  "fracas",
+  "galo grande",
+  "pintos 3 semanas",
+  "codornizes",
+  "frangas poedeiras grandes cores",
+  "frangas poedeiras araucana"
 ]);
 
-function isAnimaisAvesFamilia08Code(codigo) {
-  const dig = String(codigo == null ? "" : codigo).replace(/\D/g, "");
-  return PREFIXOS_ANIMAIS_AVES_FAMILIA_08.some(prefixo => dig.startsWith(prefixo)) ||
-    CODIGOS_ANIMAIS_AVES_FAMILIA_08.has(dig);
+function normalizarNomeAnimal(nome) {
+  return String(nome == null ? "" : nome)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isAnimalAveEspecifico(nome) {
+  return NOMES_ANIMAIS_AVES_FAMILIA_08.has(normalizarNomeAnimal(nome));
 }
 
 function getSubfamilia(p) {
@@ -698,10 +706,8 @@ function getSubfamilia(p) {
   const raw = p.codigo == null ? '' : String(p.codigo).trim();
   const dig = raw.replace(/\D/g, '');
 
-  // A classificação especial de animais prevalece sobre subfamílias antigas gravadas no produto.
-  if (isAnimaisAvesFamilia08Code(dig) && getFamilia(p) === '08') {
-    return 'ANIMAIS E AVES';
-  }
+  // Correspondência exata: só os nomes definidos pelo utilizador entram nesta subfamília.
+  if (isAnimalAveEspecifico(p.nome)) return 'ANIMAIS E AVES';
 
   if (p.subfamilia) return p.subfamilia;
   if (!raw || typeof SUBFAMILIA_POR_CODIGO === 'undefined') return '';
@@ -719,8 +725,8 @@ function getFamilia(p) {
   if (!p) return '08';
   const raw = p.codigo == null ? '' : String(p.codigo).trim();
   const dig = raw.replace(/\D/g, '');
-  // Estes artigos permanecem na família 08, embora o mapa de sugestões contenha destinos diferentes.
-  if (isAnimaisAvesFamilia08Code(dig)) return '08';
+  // Apenas os 11 nomes definidos pelo utilizador pertencem à subfamília de animais e aves da família 08.
+  if (isAnimalAveEspecifico(p.nome)) return '08';
   // 1) mapa subfamílias (lookup O(1))
   if (dig && typeof FAMILIA_POR_CODIGO_SUB !== 'undefined') {
     if (FAMILIA_POR_CODIGO_SUB[raw]) return FAMILIA_POR_CODIGO_SUB[raw];
