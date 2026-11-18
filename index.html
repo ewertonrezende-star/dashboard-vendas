@@ -698,37 +698,45 @@ function normalizarNomeAnimal(nome) {
 }
 
 function isAnimalAveEspecifico(produtoOuNome) {
-  // Os artigos do ficheiro de vendas têm pequenas diferenças de escrita:
-  // por exemplo, "PINTOS de 3 semanas" e "FRANGAS POEDEIRAS".
-  // Normalizamos a descrição e classificamos pelo início do nome do artigo.
+  // Classificação robusta dos 11 artigos de animais/aves.
+  // A descrição pode vir com prefixos, códigos, tamanhos ou texto adicional do Primavera.
   const campos = typeof produtoOuNome === 'object' && produtoOuNome !== null
-    ? [produtoOuNome.nome, produtoOuNome.descricao, produtoOuNome.designacao, produtoOuNome.artigoDescricao]
+    ? [
+        produtoOuNome.nome,
+        produtoOuNome.descricao,
+        produtoOuNome.designacao,
+        produtoOuNome.artigoDescricao,
+        produtoOuNome.artigo,
+        produtoOuNome.descricaoArtigo,
+        produtoOuNome.designacaoArtigo,
+        produtoOuNome.produto
+      ]
     : [produtoOuNome];
 
+  const textos = campos
+    .filter(function(campo) { return campo != null && String(campo).trim() !== ''; })
+    .map(function(campo) {
+      return normalizarNomeAnimal(campo)
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    });
+
   const regras = [
-    /^pintos\s+(?:de\s+)?2\s+semanas?(?:\s+\d|$)/,
-    /^frangas\s+poedeiras$/,
-    /^frangas\s+poedeiras\s+pequenas?(?:\s+\d|$)/,
-    /^frangas\s+poedeiras\s+grandes?\s+cores(?:\s+\d|$)/,
-    /^frangas\s+poedeiras\s+grandes?(?:\s+\d|$)/,
-    /^frangas\s+poedeiras\s+araucana(?:\s+\d|$)/,
-    /^perus?(?:\s+\d|$)/,
-    /^patos?(?:\s+\d|$)/,
-    /^fracas?(?:\s+\d|$)/,
-    /^galos?\s+grandes?(?:\s+\d|$)/,
-    /^pintos\s+(?:de\s+)?3\s+semanas?(?:\s+\d|$)/,
-    /^codorniz(?:es)?(?:\s+\d|$)/
+    /pintos\s+(?:de\s+)?2\s+semanas?/,
+    /frangas\s+poedeiras\s+pequenas?/,
+    /\bperus?\b/,
+    /\bpatos?\b/,
+    /frangas\s+poedeiras\s+grandes?(?:\s+cores)?/,
+    /\bfracas?\b/,
+    /\bgalos?\s+grandes?\b/,
+    /pintos\s+(?:de\s+)?3\s+semanas?/,
+    /\bcodorniz(?:es)?\b/,
+    /frangas\s+poedeiras\s+araucana/
   ];
 
-  return campos.some(function(campo) {
-    const texto = normalizarNomeAnimal(campo)
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    return regras.some(function(regra) {
-      return regra.test(texto);
-    });
+  return textos.some(function(texto) {
+    return regras.some(function(regra) { return regra.test(texto); });
   });
 }
 
